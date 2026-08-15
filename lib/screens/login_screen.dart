@@ -67,7 +67,10 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.sports_soccer, color: AppColors.gold, size: 44),
+                ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset('assets/logo.png', width: 72, height: 72, fit: BoxFit.cover),
+              ),
                 const SizedBox(height: 12),
                 const Text(
                   'Positive Elijoe Bet',

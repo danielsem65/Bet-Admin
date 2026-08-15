@@ -46,7 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(Icons.sports_soccer, color: AppColors.gold, size: 22),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: Image.asset('assets/logo.png', width: 22, height: 22, fit: BoxFit.cover),
+            ),
             const SizedBox(width: 8),
             Text(_titles[_index], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           ],
