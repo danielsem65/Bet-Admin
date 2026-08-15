@@ -146,9 +146,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
+        ),
           Positioned(
             left: 0,
             right: 0,
