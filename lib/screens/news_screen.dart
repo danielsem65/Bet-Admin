@@ -104,7 +104,7 @@ class _NewsScreenState extends State<NewsScreen> {
           else if (_error != null)
             errorCard(_error!, _load)
           else
-            DataTable(
+            AppTable(
               columns: const [
                 DataColumn(label: Text('Title')),
                 DataColumn(label: Text('Created')),
@@ -114,7 +114,7 @@ class _NewsScreenState extends State<NewsScreen> {
               rows: _rows.map((r) {
                 return DataRow(
                   cells: [
-                    DataCell(SizedBox(width: 420, child: Text(r['title']?.toString() ?? '', overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 420, child: Text(r['title']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(Text(fmtDate(r['created_at']?.toString()))),
                     DataCell(Icon(r['published'] == true ? Icons.visibility : Icons.visibility_off,
                         color: r['published'] == true ? AppColors.green : AppColors.muted, size: 18)),

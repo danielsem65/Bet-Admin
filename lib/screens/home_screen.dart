@@ -51,13 +51,27 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Image.asset('assets/logo.png', width: 22, height: 22, fit: BoxFit.cover),
             ),
             const SizedBox(width: 8),
-            Text(_titles[_index], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Flexible(
+              child: Text(
+                _titles[_index],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+            ),
           ],
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Center(child: Text(email, style: const TextStyle(color: AppColors.muted, fontSize: 13))),
+            child: Center(
+              child: Text(
+                email,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+              ),
+            ),
           ),
           IconButton(
             tooltip: 'Sign out',
@@ -74,24 +88,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Row(
         children: [
-          NavigationRail(
+          _Sidebar(
             selectedIndex: _index,
-            onDestinationSelected: (i) => setState(() => _index = i),
-            labelType: NavigationRailLabelType.all,
-            minWidth: 92,
-            destinations: const [
-              NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('Dashboard')),
-              NavigationRailDestination(icon: Icon(Icons.sports_soccer_outlined), selectedIcon: Icon(Icons.sports_soccer), label: Text('Predictions')),
-              NavigationRailDestination(icon: Icon(Icons.emoji_events_outlined), selectedIcon: Icon(Icons.emoji_events), label: Text('Results')),
-              NavigationRailDestination(icon: Icon(Icons.article_outlined), selectedIcon: Icon(Icons.article), label: Text('News')),
-              NavigationRailDestination(icon: Icon(Icons.workspace_premium_outlined), selectedIcon: Icon(Icons.workspace_premium), label: Text('Plans')),
-              NavigationRailDestination(icon: Icon(Icons.groups_outlined), selectedIcon: Icon(Icons.groups), label: Text('Teams')),
-              NavigationRailDestination(icon: Icon(Icons.verified_user_outlined), selectedIcon: Icon(Icons.verified_user), label: Text('Subs')),
-              NavigationRailDestination(icon: Icon(Icons.payments_outlined), selectedIcon: Icon(Icons.payments), label: Text('Payments')),
-              NavigationRailDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: Text('Users')),
-              NavigationRailDestination(icon: Icon(Icons.notifications_outlined), selectedIcon: Icon(Icons.notifications), label: Text('Alerts')),
-              NavigationRailDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: Text('Settings')),
-            ],
+            onSelect: (i) => setState(() => _index = i),
           ),
           const VerticalDivider(width: 1, color: AppColors.border),
           Expanded(
@@ -110,6 +109,96 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _Sidebar extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
+  const _Sidebar({required this.selectedIndex, required this.onSelect});
+
+  static const _items = [
+    (Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
+    (Icons.sports_soccer_outlined, Icons.sports_soccer, 'Predictions'),
+    (Icons.emoji_events_outlined, Icons.emoji_events, 'Results'),
+    (Icons.article_outlined, Icons.article, 'News & Tips'),
+    (Icons.workspace_premium_outlined, Icons.workspace_premium, 'Plans'),
+    (Icons.groups_outlined, Icons.groups, 'Teams'),
+    (Icons.verified_user_outlined, Icons.verified_user, 'Subscriptions'),
+    (Icons.payments_outlined, Icons.payments, 'Payments'),
+    (Icons.people_outline, Icons.people, 'Users'),
+    (Icons.notifications_outlined, Icons.notifications, 'Notifications'),
+    (Icons.settings_outlined, Icons.settings, 'Settings'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 208,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(right: BorderSide(color: AppColors.border)),
+      ),
+      child: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        children: [
+          for (var i = 0; i < _items.length; i++)
+            _SidebarItem(
+              icon: _items[i].$1,
+              selectedIcon: _items[i].$2,
+              label: _items[i].$3,
+              selected: i == selectedIndex,
+              onTap: () => onSelect(i),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SidebarItem extends StatelessWidget {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _SidebarItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? const Color(0x22FBBF24) : Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          child: Row(
+            children: [
+              Icon(selected ? selectedIcon : icon, size: 20, color: selected ? AppColors.gold : AppColors.muted),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: selected ? AppColors.gold : AppColors.text,
+                    fontSize: 14,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

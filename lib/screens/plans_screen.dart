@@ -87,7 +87,7 @@ class _PlansScreenState extends State<PlansScreen> {
           else if (_error != null)
             errorCard(_error!, _load)
           else
-            DataTable(
+            AppTable(
               columns: const [
                 DataColumn(label: Text('Name')),
                 DataColumn(label: Text('Price')),
@@ -97,7 +97,7 @@ class _PlansScreenState extends State<PlansScreen> {
               rows: _rows.map((r) {
                 return DataRow(
                   cells: [
-                    DataCell(SizedBox(width: 260, child: Text(r['name']?.toString() ?? '', overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 260, child: Text(r['name']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(Text(money((r['price'] as num?)?.toDouble() ?? 0))),
                     DataCell(Text(r['duration_days']?.toString() ?? '—')),
                     DataCell(Row(

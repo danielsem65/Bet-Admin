@@ -87,7 +87,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
           else if (_error != null)
             errorCard(_error!, _load)
           else
-            DataTable(
+            AppTable(
               columns: const [
                 DataColumn(label: Text('Name')),
                 DataColumn(label: Text('Sport')),
@@ -97,7 +97,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
               rows: _rows.map((r) {
                 return DataRow(
                   cells: [
-                    DataCell(SizedBox(width: 220, child: Text(r['name']?.toString() ?? '', overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 220, child: Text(r['name']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(Text(r['sport']?.toString() ?? '—')),
                     DataCell(r['logo_url']?.toString().isNotEmpty == true
                         ? InkWell(

@@ -91,7 +91,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           else if (_error != null)
             errorCard(_error!, _load)
           else
-            DataTable(
+            AppTable(
               columns: const [
                 DataColumn(label: Text('Date')),
                 DataColumn(label: Text('Audience')),
@@ -104,10 +104,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   cells: [
                     DataCell(Text(fmtDate(r['created_at']?.toString(), time: true))),
                     DataCell(badge(r['audience']?.toString() ?? '', r['user_id'] != null ? AppColors.blue : AppColors.gold)),
-                    DataCell(SizedBox(width: 380, child: Text(r['message']?.toString() ?? '', overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 380, child: Text(r['message']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(SizedBox(
                       width: 180,
-                      child: Text(r['link']?.toString().isNotEmpty == true ? r['link'].toString() : '—', overflow: TextOverflow.ellipsis),
+                      child: Text(r['link']?.toString().isNotEmpty == true ? r['link'].toString() : '—', maxLines: 1, overflow: TextOverflow.ellipsis),
                     )),
                     DataCell(IconButton(
                       tooltip: 'Delete',

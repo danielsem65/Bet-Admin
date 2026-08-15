@@ -97,7 +97,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
           else if (_error != null)
             errorCard(_error!, _load)
           else
-            DataTable(
+            AppTable(
               columns: const [
                 DataColumn(label: Text('Match')),
                 DataColumn(label: Text('Category')),
@@ -111,7 +111,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 final matchName = home.isEmpty ? (r['title']?.toString() ?? '—') : '$home vs $away';
                 return DataRow(
                   cells: [
-                    DataCell(SizedBox(width: 260, child: Text(matchName, overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 260, child: Text(matchName, maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(categoryBadge(r['category']?.toString() ?? '')),
                     DataCell(Text(fmtDate(r['match_date']?.toString()))),
                     DataCell(DropdownButton<String>(

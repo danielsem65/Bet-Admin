@@ -108,7 +108,10 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               DropdownButton<int>(
                 value: _minutes,
@@ -117,7 +120,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     .toList(),
                 onChanged: (v) => setState(() => _minutes = v ?? 30),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 2),
               OutlinedButton.icon(
                 onPressed: _purging ? null : _purgeStale,
                 icon: _purging
@@ -133,7 +136,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           else if (_error != null)
             errorCard(_error!, _load)
           else
-            DataTable(
+            AppTable(
               columns: const [
                 DataColumn(label: Text('Date')),
                 DataColumn(label: Text('User')),
@@ -151,9 +154,9 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 return DataRow(
                   cells: [
                     DataCell(Text(fmtDate(r['created_at']?.toString(), time: true))),
-                    DataCell(SizedBox(width: 180, child: Text(name, overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 180, child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(Text(p?['name']?.toString() ?? '—')),
-                    DataCell(SizedBox(width: 160, child: Text(r['reference']?.toString() ?? '', overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 160, child: Text(r['reference']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(Text(money((r['amount'] as num?)?.toDouble() ?? 0))),
                     DataCell(payStatusBadge(r['status']?.toString() ?? '')),
                   ],

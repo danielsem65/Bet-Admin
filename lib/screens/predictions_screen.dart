@@ -118,7 +118,10 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               SizedBox(
                 width: 320,
@@ -135,7 +138,6 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
                   },
                 ),
               ),
-              const SizedBox(width: 12),
               OutlinedButton(onPressed: () { _offset = 0; _load(); }, child: const Text('Search')),
             ],
           ),
@@ -145,7 +147,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
           else if (_error != null)
             errorCard(_error!, _load)
           else ...[
-            DataTable(
+            AppTable(
               columns: const [
                 DataColumn(label: Text('Match')),
                 DataColumn(label: Text('Tip')),
@@ -164,8 +166,8 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
                     : (r['league']?.toString().isNotEmpty == true ? '${r['league']} • $home vs $away' : '$home vs $away');
                 return DataRow(
                   cells: [
-                    DataCell(SizedBox(width: 220, child: Text(matchName, overflow: TextOverflow.ellipsis))),
-                    DataCell(SizedBox(width: 180, child: Text(r['prediction']?.toString() ?? '', overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 220, child: Text(matchName, maxLines: 1, overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 180, child: Text(r['prediction']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(Text(fmtDate(r['match_date']?.toString(), time: true))),
                     DataCell(categoryBadge(r['category']?.toString() ?? '')),
                     DataCell(Text(r['odds']?.toString() ?? '—')),
@@ -185,19 +187,20 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
               }).toList(),
             ),
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 OutlinedButton(
                   onPressed: _offset > 0 ? () { _offset -= _limit; _load(); } : null,
                   child: const Text('Previous'),
                 ),
-                const SizedBox(width: 10),
                 OutlinedButton(
                   onPressed: _hasMore ? () { _offset += _limit; _load(); } : null,
                   child: const Text('Next'),
                 ),
-                const SizedBox(width: 12),
-                Text('Showing ${_rows.length} of page ${(_offset ~/ _limit) + 1}',
+                Text('Page ${(_offset ~/ _limit) + 1} — ${_rows.length} shown',
                     style: const TextStyle(color: AppColors.muted, fontSize: 13)),
               ],
             ),

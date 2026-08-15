@@ -119,7 +119,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     StatCard(label: 'Total Users', value: '$users', icon: Icons.people, color: AppColors.blue),
                     StatCard(label: 'Active Subscriptions', value: '$activeSubs', icon: Icons.verified_user, color: AppColors.green),
-                    StatCard(label: 'Revenue (GHS)', value: revenue.toStringAsFixed(2), icon: Icons.payments, color: AppColors.gold),
+                    StatCard(label: 'Revenue', value: money(revenue), icon: Icons.payments, color: AppColors.gold),
                     StatCard(label: 'Total Payments', value: '$totalPayments', icon: Icons.receipt_long, color: AppColors.purple),
                     StatCard(label: 'Free Predictions', value: '$free', icon: Icons.sports_soccer, color: AppColors.green),
                     StatCard(label: 'VIP Predictions', value: '$vip', icon: Icons.workspace_premium, color: AppColors.gold),
@@ -129,7 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 28),
                 const Text('Recent transactions', style: TextStyle(color: AppColors.text, fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 12),
-                DataTable(
+                AppTable(
                   columns: const [
                     DataColumn(label: Text('Date')),
                     DataColumn(label: Text('User')),

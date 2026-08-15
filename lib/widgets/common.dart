@@ -15,6 +15,25 @@ class PageFrame extends StatelessWidget {
   }
 }
 
+/// DataTable wrapped in a horizontal scrollbar so wide tables never get
+/// squeezed (which is what makes text wrap vertically).
+class AppTable extends StatelessWidget {
+  final List<DataColumn> columns;
+  final List<DataRow> rows;
+  const AppTable({super.key, required this.columns, required this.rows});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scrollbar(
+      thumbVisibility: true,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(columns: columns, rows: rows),
+      ),
+    );
+  }
+}
+
 class StatCard extends StatelessWidget {
   final String label;
   final String value;
@@ -67,23 +86,51 @@ class ScreenHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final hasActions = actions != null && actions!.isNotEmpty;
+    final titleCol = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: AppColors.text, fontSize: 22, fontWeight: FontWeight.w700),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            subtitle!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: AppColors.muted, fontSize: 13),
+          ),
+        ],
+      ],
+    );
+    if (!hasActions) return titleCol;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 760;
+        final actionRow = Wrap(spacing: 10, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: actions!);
+        if (wide) {
+          return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(color: AppColors.text, fontSize: 22, fontWeight: FontWeight.w700)),
-              if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                Text(subtitle!, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
-              ],
+              Expanded(child: titleCol),
+              const SizedBox(width: 16),
+              actionRow,
             ],
-          ),
-        ),
-        if (actions != null) ...actions!,
-      ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            titleCol,
+            const SizedBox(height: 12),
+            actionRow,
+          ],
+        );
+      },
     );
   }
 }

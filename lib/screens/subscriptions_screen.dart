@@ -107,7 +107,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
           else if (_error != null)
             errorCard(_error!, _load)
           else
-            DataTable(
+            AppTable(
               columns: const [
                 DataColumn(label: Text('User')),
                 DataColumn(label: Text('Plan')),
@@ -124,7 +124,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                     : (u?['email']?.toString() ?? '—');
                 return DataRow(
                   cells: [
-                    DataCell(SizedBox(width: 200, child: Text(name, overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 200, child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(Text(p?['name']?.toString() ?? '—')),
                     DataCell(Text(fmtDate(r['start_date']?.toString()))),
                     DataCell(Text(fmtDate(r['end_date']?.toString()))),

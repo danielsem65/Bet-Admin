@@ -125,7 +125,10 @@ class _UsersScreenState extends State<UsersScreen> {
         children: [
           const ScreenHeader(title: 'Users', subtitle: 'All registered accounts'),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               SizedBox(
                 width: 320,
@@ -138,7 +141,6 @@ class _UsersScreenState extends State<UsersScreen> {
                   },
                 ),
               ),
-              const SizedBox(width: 12),
               OutlinedButton(
                 onPressed: () {
                   _search = _searchCtrl.text.trim();
@@ -154,7 +156,7 @@ class _UsersScreenState extends State<UsersScreen> {
           else if (_error != null)
             errorCard(_error!, _load)
           else
-            DataTable(
+            AppTable(
               columns: const [
                 DataColumn(label: Text('User')),
                 DataColumn(label: Text('Role')),
@@ -169,7 +171,7 @@ class _UsersScreenState extends State<UsersScreen> {
                 final banned = r['banned_at'] != null;
                 return DataRow(
                   cells: [
-                    DataCell(SizedBox(width: 240, child: Text(name, overflow: TextOverflow.ellipsis))),
+                    DataCell(SizedBox(width: 240, child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(badge(r['role']?.toString() ?? 'user',
                         r['role'] == 'admin' ? AppColors.gold : AppColors.blue)),
                     DataCell(Text(fmtDate(r['created_at']?.toString()))),
