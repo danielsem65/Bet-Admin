@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/config.dart';
@@ -75,6 +78,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
             title: 'Teams',
             subtitle: 'Team avatars used on prediction cards',
             actions: [
+              RefreshButton(onPressed: _load, enabled: !_loading),
               FilledButton.icon(
                 onPressed: () => _openForm(),
                 icon: const Icon(Icons.add, size: 18),
@@ -190,6 +194,8 @@ class _TeamFormState extends State<TeamForm> {
       _name.text = r['name']?.toString() ?? '';
       _sport.text = r['sport']?.toString() ?? '';
       _logo.text = r['logo_url']?.toString() ?? '';
+    } else {
+      _sport.text = 'Football';
     }
   }
 
@@ -229,6 +235,26 @@ class _TeamFormState extends State<TeamForm> {
     }
   }
 
+  /// Pulls the team crest from TheSportsDB using the entered team name so
+  /// the admin can save it alongside (or instead of) a picked image.
+  Future<String?> _pullCrest() async {
+    final name = _name.text.trim();
+    if (name.isEmpty) {
+      snack(context, 'Enter a team name first.', error: true);
+      return null;
+    }
+    final res = await http.get(
+      Uri.parse(
+        'https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${Uri.encodeQueryComponent(name)}',
+      ),
+    );
+    if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    final teams = body['teams'];
+    if (teams is! List || teams.isEmpty) return null;
+    return (teams.first as Map<String, dynamic>)['strTeamBadge']?.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -243,7 +269,7 @@ class _TeamFormState extends State<TeamForm> {
               const SizedBox(height: 12),
               formField(_sport, 'Sport'),
               const SizedBox(height: 12),
-              ImageUrlField(controller: _logo, label: 'Logo URL'),
+              ImageUrlField(controller: _logo, label: 'Logo URL', onPull: _pullCrest),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: const TextStyle(color: AppColors.red, fontSize: 13)),

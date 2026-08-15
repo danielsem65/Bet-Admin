@@ -78,6 +78,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             title: 'Notifications',
             subtitle: 'Broadcast messages to all users or by plan',
             actions: [
+              RefreshButton(onPressed: _load, enabled: !_loading),
               FilledButton.icon(
                 onPressed: () => _openForm(),
                 icon: const Icon(Icons.add, size: 18),

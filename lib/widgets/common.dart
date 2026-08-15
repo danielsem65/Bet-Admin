@@ -154,6 +154,23 @@ class ScreenHeader extends StatelessWidget {
   }
 }
 
+/// Icon-only refresh button used in page headers so the admin can reload
+/// data manually when a connection drops and content fails to load.
+class RefreshButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final bool enabled;
+  const RefreshButton({super.key, required this.onPressed, this.enabled = true});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Refresh',
+      onPressed: enabled ? onPressed : null,
+      icon: const Icon(Icons.refresh, size: 20),
+    );
+  }
+}
+
 Future<bool> confirmDialog(BuildContext context, String title, String message) async {
   final res = await showDialog<bool>(
     context: context,
@@ -194,11 +211,16 @@ Widget formField(TextEditingController controller, String label, {bool multiline
 /// Image URL field with a live thumbnail preview so the admin can see the
 /// image before posting. Relative paths are resolved against the admin API
 /// base URL.
+///
+/// An optional [onPull] callback renders an extra "pull" button (next to the
+/// pick-file button) that fetches an image URL from the web (e.g. a team
+/// crest from TheSportsDB) and fills the field with it.
 class ImageUrlField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
+  final Future<String?> Function()? onPull;
 
-  const ImageUrlField({super.key, required this.controller, required this.label});
+  const ImageUrlField({super.key, required this.controller, required this.label, this.onPull});
 
   @override
   State<ImageUrlField> createState() => _ImageUrlFieldState();
@@ -207,6 +229,7 @@ class ImageUrlField extends StatefulWidget {
 class _ImageUrlFieldState extends State<ImageUrlField> {
   late String _url;
   bool _busy = false;
+  bool _pulling = false;
 
   @override
   void initState() {
@@ -242,6 +265,24 @@ class _ImageUrlFieldState extends State<ImageUrlField> {
     }
   }
 
+  Future<void> _pull() async {
+    if (_pulling || widget.onPull == null) return;
+    setState(() => _pulling = true);
+    try {
+      final url = await widget.onPull!();
+      if (url != null && url.isNotEmpty && mounted) {
+        widget.controller.text = url;
+        _onChanged();
+      } else if (mounted) {
+        snack(context, 'No crest found. Try the official team name.', error: true);
+      }
+    } catch (e) {
+      if (mounted) snack(context, 'Pull failed: $e', error: true);
+    } finally {
+      if (mounted) setState(() => _pulling = false);
+    }
+  }
+
   String? get _previewUrl {
     final url = _url;
     if (url.isEmpty) return null;
@@ -256,7 +297,26 @@ class _ImageUrlFieldState extends State<ImageUrlField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(child: formField(widget.controller, widget.label, hint: 'https://...')),
-        const SizedBox(width: 8),
+        if (widget.onPull != null) ...[
+          const SizedBox(width: 4),
+          SizedBox(
+            width: 36,
+            height: 48,
+            child: IconButton(
+              tooltip: 'Pull image from web',
+              padding: EdgeInsets.zero,
+              onPressed: _pulling ? null : _pull,
+              icon: _pulling
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.cloud_download_outlined, size: 18, color: AppColors.muted),
+            ),
+          ),
+        ],
+        const SizedBox(width: 4),
         SizedBox(
           width: 36,
           height: 48,

@@ -123,7 +123,13 @@ class _UsersScreenState extends State<UsersScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ScreenHeader(title: 'Users', subtitle: 'All registered accounts'),
+          ScreenHeader(
+            title: 'Users',
+            subtitle: 'All registered accounts',
+            actions: [
+              RefreshButton(onPressed: _load, enabled: !_loading),
+            ],
+          ),
           const SizedBox(height: 16),
           Wrap(
             spacing: 12,

@@ -88,6 +88,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
             title: 'Subscriptions',
             subtitle: 'User plan subscriptions',
             actions: [
+              RefreshButton(onPressed: _load, enabled: !_loading),
               DropdownButtonFormField<String>(
                 initialValue: _filter,
                 decoration: const InputDecoration(labelText: 'Filter'),

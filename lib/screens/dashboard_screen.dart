@@ -97,11 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: 'Dashboard',
             subtitle: 'Platform overview',
             actions: [
-              OutlinedButton.icon(
-                onPressed: _loading ? null : _load,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Refresh'),
-              ),
+              RefreshButton(onPressed: _load, enabled: !_loading),
             ],
           ),
           const SizedBox(height: 20),

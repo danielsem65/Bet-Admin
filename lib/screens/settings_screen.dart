@@ -138,11 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Settings',
             subtitle: 'Site-wide settings',
             actions: [
-              OutlinedButton.icon(
-                onPressed: _saving ? null : _load,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Reload'),
-              ),
+              RefreshButton(onPressed: _load, enabled: !_saving),
             ],
           ),
           const SizedBox(height: 16),

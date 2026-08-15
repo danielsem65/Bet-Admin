@@ -77,6 +77,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
             title: 'Results',
             subtitle: 'Mark predictions Won, Lost or Void',
             actions: [
+              RefreshButton(onPressed: _load, enabled: !_loading),
               DropdownButtonFormField<String>(
                 initialValue: _filter,
                 decoration: const InputDecoration(labelText: 'Filter'),

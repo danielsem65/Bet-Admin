@@ -124,11 +124,7 @@ class _AdsScreenState extends State<AdsScreen> {
             title: 'Ads',
             subtitle: 'Homepage ad cards',
             actions: [
-              OutlinedButton.icon(
-                onPressed: _saving ? null : _load,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Reload'),
-              ),
+              RefreshButton(onPressed: _load, enabled: !_saving),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
                 icon: _saving

@@ -91,6 +91,7 @@ class _NewsScreenState extends State<NewsScreen> {
             title: 'News & Tips',
             subtitle: 'Articles shown on the site',
             actions: [
+              RefreshButton(onPressed: _load, enabled: !_loading),
               FilledButton.icon(
                 onPressed: () => _openForm(),
                 icon: const Icon(Icons.add, size: 18),

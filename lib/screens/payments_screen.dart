@@ -93,6 +93,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             title: 'Payments',
             subtitle: 'Payment transactions',
             actions: [
+              RefreshButton(onPressed: _load, enabled: !_loading),
               DropdownButtonFormField<String>(
                 initialValue: _filter,
                 decoration: const InputDecoration(labelText: 'Filter'),

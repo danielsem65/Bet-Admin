@@ -110,6 +110,7 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
             title: 'Predictions',
             subtitle: 'Manage tips for FREE, VIP and VVIP users',
             actions: [
+              RefreshButton(onPressed: _load, enabled: !_loading),
               FilledButton.icon(
                 onPressed: () => _openForm(),
                 icon: const Icon(Icons.add, size: 18),
