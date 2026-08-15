@@ -121,6 +121,19 @@ LRESULT CALLBACK FlutterViewSubclassProc(HWND hwnd,
     }
     return result;
   }
+
+  // A child window returning HTCAPTION receives the non-client mouse messages
+  // itself. DefWindowProc would then run the caption drag loop against the
+  // *child*, moving the hosted content inside a stationary frame. Route the
+  // caption interaction to the top-level window so the whole window moves.
+  if (message == WM_NCLBUTTONDOWN || message == WM_NCLBUTTONUP ||
+      message == WM_NCLBUTTONDBLCLK) {
+    if ((static_cast<LONG>(wparam) & 0xFFFF) == HTCAPTION) {
+      SendMessage(GetAncestor(hwnd, GA_ROOT), message, wparam, lparam);
+      return 0;
+    }
+  }
+
   return CallWindowProc(g_original_flutter_view_proc, hwnd, message, wparam, lparam);
 }
 
