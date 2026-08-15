@@ -20,7 +20,7 @@ Future<void> main() async {
 }
 
 /// Configures the frameless window. Dragging and the custom minimize /
-/// maximize / fullscreen / close buttons are handled through window_manager
+/// maximize / close buttons are handled through window_manager
 /// (the same approach used by SemFlix TV), which talks to the top-level
 /// window directly so drags move the whole window.
 Future<void> _initWindow() async {

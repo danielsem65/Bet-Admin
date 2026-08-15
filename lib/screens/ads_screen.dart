@@ -122,7 +122,7 @@ class _AdsScreenState extends State<AdsScreen> {
         children: [
           ScreenHeader(
             title: 'Ads',
-            subtitle: 'Homepage ad cards (site_settings row id = 1)',
+            subtitle: 'Homepage ad cards',
             actions: [
               OutlinedButton.icon(
                 onPressed: _saving ? null : _load,
@@ -144,42 +144,34 @@ class _AdsScreenState extends State<AdsScreen> {
           else if (_error != null && _title1.text.isEmpty && _title2.text.isEmpty)
             errorCard(_error!, _load)
           else
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final card1 = _AdCardEditor(
-                  index: 1,
-                  title: _title1,
-                  text: _text1,
-                  details: _details1,
-                  image: _image1,
-                  link: _link1,
-                );
-                final card2 = _AdCardEditor(
-                  index: 2,
-                  title: _title2,
-                  text: _text2,
-                  details: _details2,
-                  image: _image2,
-                  link: _link2,
-                );
-                if (constraints.maxWidth >= 900) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: card1),
-                      const SizedBox(width: 16),
-                      Expanded(child: card2),
-                    ],
-                  );
-                }
-                return Column(
-                  children: [
-                    card1,
-                    const SizedBox(height: 16),
-                    card2,
-                  ],
-                );
-              },
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _AdCardEditor(
+                      index: 1,
+                      title: _title1,
+                      text: _text1,
+                      details: _details1,
+                      image: _image1,
+                      link: _link1,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _AdCardEditor(
+                      index: 2,
+                      title: _title2,
+                      text: _text2,
+                      details: _details2,
+                      image: _image2,
+                      link: _link2,
+                    ),
+                  ),
+                ],
+              ),
             ),
           if (_error != null) ...[
             const SizedBox(height: 12),

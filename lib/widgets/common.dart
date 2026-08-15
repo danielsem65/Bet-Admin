@@ -356,7 +356,7 @@ class LoadingBox extends StatelessWidget {
   }
 }
 
-/// Custom minimize / maximize / fullscreen / close buttons for the frameless
+/// Custom minimize / maximize / close buttons for the frameless
 /// window, driven through window_manager (same approach as SemFlix TV).
 class WindowControls extends StatefulWidget {
   const WindowControls({super.key});
@@ -367,7 +367,6 @@ class WindowControls extends StatefulWidget {
 
 class _WindowControlsState extends State<WindowControls> {
   bool _maximized = false;
-  bool _fullscreen = false;
   late final WindowListener _listener;
 
   @override
@@ -377,9 +376,6 @@ class _WindowControlsState extends State<WindowControls> {
     windowManager.addListener(_listener);
     windowManager.isMaximized().then((v) {
       if (mounted) setState(() => _maximized = v);
-    });
-    windowManager.isFullScreen().then((v) {
-      if (mounted) setState(() => _fullscreen = v);
     });
   }
 
@@ -411,11 +407,6 @@ class _WindowControlsState extends State<WindowControls> {
           },
         ),
         _WindowControlButton(
-          icon: _fullscreen ? Icons.fullscreen_exit_rounded : Icons.open_in_full_rounded,
-          tooltip: _fullscreen ? 'Exit fullscreen' : 'Fullscreen',
-          onTap: () => windowManager.setFullScreen(!_fullscreen),
-        ),
-        _WindowControlButton(
           icon: Icons.close_rounded,
           tooltip: 'Close',
           close: true,
@@ -439,16 +430,6 @@ class _WindowControlsListener extends WindowListener {
   @override
   void onWindowUnmaximize() {
     if (state.mounted) state.setState(() => state._maximized = false);
-  }
-
-  @override
-  void onWindowEnterFullScreen() {
-    if (state.mounted) state.setState(() => state._fullscreen = true);
-  }
-
-  @override
-  void onWindowLeaveFullScreen() {
-    if (state.mounted) state.setState(() => state._fullscreen = false);
   }
 }
 

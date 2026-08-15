@@ -136,7 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           ScreenHeader(
             title: 'Settings',
-            subtitle: 'Site-wide settings (row id = 1)',
+            subtitle: 'Site-wide settings',
             actions: [
               OutlinedButton.icon(
                 onPressed: _saving ? null : _load,
