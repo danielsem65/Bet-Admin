@@ -9,7 +9,7 @@ class AppConfig {
     'STORAGE_BUCKET',
     defaultValue: '',
   );
-  static const String storageBucket = _storageBucketRaw.isEmpty ? 'uploads' : _storageBucketRaw;
+  static String get storageBucket => _storageBucketRaw.isEmpty ? 'uploads' : _storageBucketRaw;
   static const String appName = 'Positive Elijoe Bet';
 
   static bool get isConfigured => supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;

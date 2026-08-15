@@ -34,14 +34,23 @@ class ImageUpload {
     final name = file.name.isEmpty ? 'image.jpg' : file.name;
     final ext = name.contains('.') ? name.split('.').last.toLowerCase() : 'jpg';
     final sanitizedExt = RegExp(r'^[a-z0-9]{1,5}$').hasMatch(ext) ? ext : 'jpg';
-    final path = 'news/${DateTime.now().millisecondsSinceEpoch}.$sanitizedExt';
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final path = 'news/$ts.$sanitizedExt';
 
-    final bucket = SupabaseService.client.storage.from(AppConfig.storageBucket);
-    await bucket.upload(
-      path,
-      bytes,
-      fileOptions: FileOptions(contentType: _contentType(sanitizedExt)),
-    );
+    final tmp = File('${Directory.systemTemp.path}/betadmin_$ts.$sanitizedExt');
+    try {
+      await tmp.writeAsBytes(bytes, flush: true);
+      final bucket = SupabaseService.client.storage.from(AppConfig.storageBucket);
+      await bucket.upload(
+        path,
+        tmp,
+        fileOptions: FileOptions(contentType: _contentType(sanitizedExt)),
+      );
+    } finally {
+      if (await tmp.exists()) {
+        await tmp.delete();
+      }
+    }
     return bucket.getPublicUrl(path);
   }
 
