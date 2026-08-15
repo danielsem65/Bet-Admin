@@ -16,6 +16,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _pass = TextEditingController();
+  bool _obscure = true;
   bool _busy = false;
   String? _error;
 
@@ -52,11 +53,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Container(
-            width: 380,
+      body: Stack(
+        children: [
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                width: 380,
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
               color: AppColors.surface,
@@ -67,10 +70,20 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset('assets/logo.png', width: 72, height: 72, fit: BoxFit.cover),
-              ),
+                Center(
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.border),
+                      image: const DecorationImage(
+                        image: AssetImage('assets/logo.png'),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 const Text(
                   'Positive Elijoe Bet',
@@ -91,8 +104,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 14),
                 TextField(
                   controller: _pass,
-                  obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock_outline)),
+                  obscureText: _obscure,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      tooltip: _obscure ? 'Show password' : 'Hide password',
+                      icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                    ),
+                  ),
                   onSubmitted: (_) => _login(),
                 ),
                 if (_error != null) ...[
@@ -119,6 +140,24 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 36,
+            alignment: Alignment.center,
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.muted.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ));
   }
 }

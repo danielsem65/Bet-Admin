@@ -43,72 +43,103 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final email = SupabaseService.user?.email ?? '';
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: Image.asset('assets/logo.png', width: 22, height: 22, fit: BoxFit.cover),
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                _titles[_index],
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+      body: Column(
+        children: [
+          const _DragStrip(),
+          Expanded(
+            child: Scaffold(
+              appBar: AppBar(
+                title: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(5),
+                      child: Image.asset('assets/logo.png', width: 22, height: 22, fit: BoxFit.cover),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        _titles[_index],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Center(
+                      child: Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: AppColors.muted, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Sign out',
+                    icon: const Icon(Icons.logout),
+                    onPressed: () async {
+                      if (await confirmDialog(context, 'Sign out', 'Sign out of the admin console?')) {
+                        await SupabaseService.signOut();
+                        if (context.mounted) Navigator.of(context).pushReplacementNamed('/');
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
               ),
-            ),
-          ],
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Center(
-              child: Text(
-                email,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+              body: Row(
+                children: [
+                  _Sidebar(
+                    selectedIndex: _index,
+                    onSelect: (i) => setState(() => _index = i),
+                  ),
+                  const VerticalDivider(width: 1, color: AppColors.border),
+                  Expanded(
+                    child: switch (_index) {
+                      0 => const DashboardScreen(),
+                      1 => const PredictionsScreen(),
+                      2 => const ResultsScreen(),
+                      3 => const NewsScreen(),
+                      4 => const PlansScreen(),
+                      5 => const TeamsScreen(),
+                      6 => const SubscriptionsScreen(),
+                      7 => const PaymentsScreen(),
+                      8 => const UsersScreen(),
+                      9 => const NotificationsScreen(),
+                      _ => const SettingsScreen(),
+                    },
+                  ),
+                ],
               ),
             ),
           ),
-          IconButton(
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              if (await confirmDialog(context, 'Sign out', 'Sign out of the admin console?')) {
-                await SupabaseService.signOut();
-                if (context.mounted) Navigator.of(context).pushReplacementNamed('/');
-              }
-            },
-          ),
-          const SizedBox(width: 8),
         ],
       ),
-      body: Row(
-        children: [
-          _Sidebar(
-            selectedIndex: _index,
-            onSelect: (i) => setState(() => _index = i),
-          ),
-          const VerticalDivider(width: 1, color: AppColors.border),
-          Expanded(
-            child: switch (_index) {
-              0 => const DashboardScreen(),
-              1 => const PredictionsScreen(),
-              2 => const ResultsScreen(),
-              3 => const NewsScreen(),
-              4 => const PlansScreen(),
-              5 => const TeamsScreen(),
-              6 => const SubscriptionsScreen(),
-              7 => const PaymentsScreen(),
-              8 => const UsersScreen(),
-              9 => const NotificationsScreen(),
-              _ => const SettingsScreen(),
-            },
-          ),
-        ],
+    );
+  }
+}
+
+class _DragStrip extends StatelessWidget {
+  const _DragStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 36,
+      width: double.infinity,
+      color: AppColors.surface,
+      alignment: Alignment.center,
+      child: Container(
+        width: 40,
+        height: 4,
+        decoration: BoxDecoration(
+          color: AppColors.muted.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(2),
+        ),
       ),
     );
   }

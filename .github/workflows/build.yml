@@ -23,6 +23,12 @@ jobs:
       - name: Generate Windows runner
         run: flutter create --platforms=windows .
 
+      - name: Apply custom window frame & app icon
+        shell: powershell
+        run: |
+          Copy-Item -Force ci/windows/win32_window.cpp windows/runner/win32_window.cpp
+          Copy-Item -Force ci/windows/app_icon.ico windows/runner/resources/app_icon.ico
+
       - name: Install dependencies
         run: flutter pub get
 
