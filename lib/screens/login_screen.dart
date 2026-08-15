@@ -146,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
           right: 0,
           child: Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Center(
                   child: Container(
                     width: 40,

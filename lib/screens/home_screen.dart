@@ -134,7 +134,7 @@ class _DragStrip extends StatelessWidget {
       color: AppColors.surface,
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Center(
               child: Container(
                 width: 40,
