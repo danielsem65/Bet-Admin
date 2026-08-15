@@ -56,11 +56,16 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 72, 24, 24),
-            child: Center(
-              child: Container(
-                width: 380,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 44, horizontal: 24),
+                      child: Container(
+                        width: 380,
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
               color: AppColors.surface,
@@ -136,13 +141,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(color: AppColors.red, fontSize: 12),
                   ),
                 ],
-              ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 14,
+            child: Center(
+              child: Text(
+                'Powered by SemDev Studio',
+                style: TextStyle(color: AppColors.muted.withValues(alpha: 0.8), fontSize: 12),
+              ),
             ),
           ),
-        ),
-      ),
-        Positioned(
-          top: 0,
+          Positioned(
+            top: 0,
           left: 0,
           right: 0,
           child: Row(
