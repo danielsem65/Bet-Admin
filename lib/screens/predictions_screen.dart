@@ -268,6 +268,7 @@ class _PredictionFormState extends State<PredictionForm> {
   bool _published = false;
   bool _busy = false;
   String? _error;
+  List<Map<String, dynamic>> _teamSuggestions = [];
 
   bool get _isEdit => widget.existing != null;
 
@@ -293,6 +294,17 @@ class _PredictionFormState extends State<PredictionForm> {
     } else {
       _sport.text = 'Football';
     }
+    _loadTeamSuggestions();
+  }
+
+  Future<void> _loadTeamSuggestions() async {
+    try {
+      final res = await SupabaseService.client
+          .from('teams')
+          .select('name,logo_url')
+          .order('name', ascending: true);
+      if (mounted) setState(() => _teamSuggestions = res.cast<Map<String, dynamic>>());
+    } catch (_) {}
   }
 
   @override
@@ -397,9 +409,9 @@ class _PredictionFormState extends State<PredictionForm> {
                 Expanded(child: formField(_league, 'League')),
               ]),
               const SizedBox(height: 12),
-              _TeamCrestField(controller: _home, label: 'Home team'),
+              _TeamCrestField(controller: _home, label: 'Home team', suggestions: _teamSuggestions),
               const SizedBox(height: 12),
-              _TeamCrestField(controller: _away, label: 'Away team'),
+              _TeamCrestField(controller: _away, label: 'Away team', suggestions: _teamSuggestions),
               const SizedBox(height: 12),
               TextField(
                 controller: _date,
@@ -485,12 +497,18 @@ class _PredictionFormState extends State<PredictionForm> {
   }
 }
 
-/// Home/Away team input with a live crest preview and a pull button that
-/// fetches + saves the crest (into the `teams` table) from the web.
+/// Home/Away team input with an autocomplete dropdown of existing teams, a
+/// live crest preview and a pull button that fetches + saves the crest (into
+/// the `teams` table) from the web.
 class _TeamCrestField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
-  const _TeamCrestField({required this.controller, required this.label});
+  final List<Map<String, dynamic>> suggestions;
+  const _TeamCrestField({
+    required this.controller,
+    required this.label,
+    this.suggestions = const [],
+  });
 
   @override
   State<_TeamCrestField> createState() => _TeamCrestFieldState();
@@ -518,6 +536,13 @@ class _TeamCrestFieldState extends State<_TeamCrestField> {
   void _onChanged() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), _lookup);
+  }
+
+  String? _logoFor(String name) {
+    for (final s in widget.suggestions) {
+      if (s['name']?.toString() == name) return s['logo_url']?.toString();
+    }
+    return null;
   }
 
   Future<void> _lookup() async {
@@ -576,7 +601,63 @@ class _TeamCrestFieldState extends State<_TeamCrestField> {
           ),
         ),
         const SizedBox(width: 8),
-        Expanded(child: formField(widget.controller, widget.label)),
+        Expanded(
+          child: RawAutocomplete<String>(
+            textEditingController: widget.controller,
+            displayStringForOption: (o) => o,
+            optionsBuilder: (t) {
+              final q = t.text.trim().toLowerCase();
+              final names = widget.suggestions
+                  .map((s) => s['name']?.toString() ?? '')
+                  .where((n) => n.isNotEmpty);
+              if (q.isEmpty) return names.take(40);
+              return names.where((n) => n.toLowerCase().contains(q)).take(40);
+            },
+            onSelected: (s) {
+              widget.controller.text = s;
+              _debounce?.cancel();
+              _lookup();
+            },
+            fieldViewBuilder: (context, tec, fn, onFieldSubmitted) {
+              return TextField(
+                controller: tec,
+                focusNode: fn,
+                decoration: InputDecoration(
+                  labelText: widget.label,
+                  hintText: 'Start typing to pick an existing team',
+                ),
+              );
+            },
+            optionsViewBuilder: (context, onSelected, options) {
+              return Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  color: AppColors.surface,
+                  elevation: 6,
+                  borderRadius: BorderRadius.circular(10),
+                  clipBehavior: Clip.antiAlias,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 220, maxWidth: 360),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: options.length,
+                      itemBuilder: (context, i) {
+                        final name = options.elementAt(i);
+                        return ListTile(
+                          dense: true,
+                          leading: CrestAvatar(name: name, url: _logoFor(name)),
+                          title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          onTap: () => onSelected(name),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
         const SizedBox(width: 4),
         SizedBox(
           width: 36,
