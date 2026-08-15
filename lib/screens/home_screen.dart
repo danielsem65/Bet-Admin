@@ -132,14 +132,22 @@ class _DragStrip extends StatelessWidget {
       height: 36,
       width: double.infinity,
       color: AppColors.surface,
-      alignment: Alignment.center,
-      child: Container(
-        width: 40,
-        height: 4,
-        decoration: BoxDecoration(
-          color: AppColors.muted.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(2),
-        ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Color(0x8C8A95AC),
+                  borderRadius: BorderRadius.all(Radius.circular(2)),
+                ),
+              ),
+            ),
+          ),
+          const WindowControls(),
+        ],
       ),
     );
   }

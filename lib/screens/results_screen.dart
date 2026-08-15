@@ -18,7 +18,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
   String? _error;
   List<Map<String, dynamic>> _rows = [];
   final Map<Object?, String> _statusDrafts = {};
-  String _filter = 'Pending';
+  String _filter = '';
 
   @override
   void initState() {

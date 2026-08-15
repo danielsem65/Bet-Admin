@@ -27,6 +27,9 @@ jobs:
         shell: powershell
         run: |
           Copy-Item -Force ci/windows/win32_window.cpp windows/runner/win32_window.cpp
+          Copy-Item -Force ci/windows/win32_window.h windows/runner/win32_window.h
+          Copy-Item -Force ci/windows/flutter_window.cpp windows/runner/flutter_window.cpp
+          Copy-Item -Force ci/windows/flutter_window.h windows/runner/flutter_window.h
           Copy-Item -Force ci/windows/app_icon.ico windows/runner/resources/app_icon.ico
 
       - name: Install dependencies

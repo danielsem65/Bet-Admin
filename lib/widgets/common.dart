@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/admin_window.dart';
 import '../core/theme.dart';
 
 class PageFrame extends StatelessWidget {
@@ -200,6 +201,70 @@ class LoadingBox extends StatelessWidget {
     return const Padding(
       padding: EdgeInsets.all(40),
       child: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+/// Custom minimize / fullscreen / close buttons for the frameless window.
+/// Keep the total width in sync with kWindowControlRightWidth in
+/// ci/windows/win32_window.cpp so the drag band stops before these buttons.
+class WindowControls extends StatelessWidget {
+  const WindowControls({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _WindowControlButton(
+          icon: Icons.remove_rounded,
+          tooltip: 'Minimize',
+          onTap: AdminWindow.minimize,
+        ),
+        _WindowControlButton(
+          icon: Icons.open_in_full_rounded,
+          tooltip: 'Toggle fullscreen',
+          onTap: AdminWindow.toggleFullScreen,
+        ),
+        _WindowControlButton(
+          icon: Icons.close_rounded,
+          tooltip: 'Close',
+          close: true,
+          onTap: AdminWindow.close,
+        ),
+      ],
+    );
+  }
+}
+
+class _WindowControlButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final bool close;
+  final VoidCallback onTap;
+
+  const _WindowControlButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.close = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 40,
+      height: 36,
+      child: Material(
+        color: Colors.transparent,
+        child: IconButton(
+          padding: EdgeInsets.zero,
+          tooltip: tooltip,
+          icon: Icon(icon, size: 17, color: AppColors.muted),
+          hoverColor: close ? const Color(0xFFD63A3A) : AppColors.surface2,
+          onPressed: onTap,
+        ),
+      ),
     );
   }
 }

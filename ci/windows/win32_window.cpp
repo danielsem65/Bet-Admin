@@ -17,12 +17,25 @@ namespace {
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
 
-/// Radius (in pixels) used to round the corners of the application window.
-constexpr int kWindowCornerRadius = 13;
+/// Window attribute that controls the color of the window border.
+/// Win11 22H2+. Redefined for older SDKs.
+#ifndef DWMWA_BORDER_COLOR
+#define DWMWA_BORDER_COLOR 34
+#endif
 
-/// Height of the top drag region that lets the user move the borderless
-/// window. Interactive Flutter content must stay below this band.
-constexpr int kDragRegionHeight = 40;
+/// Window attribute that controls the color of the window caption.
+/// Win11 22H2+. Redefined for older SDKs.
+#ifndef DWMWA_CAPTION_COLOR
+#define DWMWA_CAPTION_COLOR 35
+#endif
+
+/// Height (in logical pixels) of the draggable strip at the top of the window.
+/// Must match the height of the Flutter drag strip.
+constexpr int kDragBandHeight = 36;
+
+/// Width (in logical pixels) reserved at the top-right of the drag strip for
+/// the custom minimize / fullscreen / close buttons.
+constexpr int kWindowControlRightWidth = 120;
 
 constexpr const wchar_t kWindowClassName[] = L"FLUTTER_RUNNER_WIN32_WINDOW";
 
@@ -61,19 +74,54 @@ void EnableFullDpiSupportIfAvailable(HWND hwnd) {
   FreeLibrary(user32_module);
 }
 
-// Rounds the corners of the window using a 13px radius region. Must be
-// re-applied whenever the window is resized.
-void ApplyRoundedCorners(HWND window) {
-  RECT rect;
-  if (!GetWindowRect(window, &rect)) {
-    return;
+// Returns the DPI of the given window using GDI so this compiles against any
+// Windows SDK version. The process is per-monitor DPI aware, so this reflects
+// the DPI of the monitor the window is on.
+UINT GetWindowDpi(HWND hwnd) {
+  HDC dc = GetDC(hwnd);
+  UINT dpi = dc ? static_cast<UINT>(GetDeviceCaps(dc, LOGPIXELSX)) : 96;
+  if (dc) {
+    ReleaseDC(hwnd, dc);
   }
-  int width = rect.right - rect.left;
-  int height = rect.bottom - rect.top;
-  HRGN region =
-      CreateRoundRectRgn(0, 0, width + 1, height + 1, kWindowCornerRadius,
-                         kWindowCornerRadius);
-  SetWindowRgn(window, region, TRUE);
+  return dpi > 0 ? dpi : 96;
+}
+
+// Original window procedure of the hosted Flutter view, saved before the view
+// is subclassed so hit testing can be customized.
+WNDPROC g_original_flutter_view_proc = nullptr;
+
+// Subclass procedure installed on the Flutter view window.
+//
+// Real input hit-testing is performed against this child window, so the
+// draggable top band is implemented here by returning HTCAPTION. This lets the
+// borderless window be moved by dragging the top strip while keeping the
+// custom window-control buttons (top-right) clickable.
+LRESULT CALLBACK FlutterViewSubclassProc(HWND hwnd,
+                                         UINT const message,
+                                         WPARAM const wparam,
+                                         LPARAM const lparam) noexcept {
+  if (message == WM_NCHITTEST) {
+    LRESULT result =
+        CallWindowProc(g_original_flutter_view_proc, hwnd, message, wparam, lparam);
+    if (result == HTCLIENT) {
+      POINT pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+      ScreenToClient(hwnd, &pt);
+
+      RECT client;
+      GetClientRect(hwnd, &client);
+      const int width = client.right - client.left;
+
+      UINT dpi = GetWindowDpi(hwnd);
+      const int band_height = MulDiv(kDragBandHeight, dpi, 96);
+      const int reserved_width = MulDiv(kWindowControlRightWidth, dpi, 96);
+
+      if (pt.y >= 0 && pt.y < band_height && pt.x < width - reserved_width) {
+        return HTCAPTION;
+      }
+    }
+    return result;
+  }
+  return CallWindowProc(g_original_flutter_view_proc, hwnd, message, wparam, lparam);
 }
 
 }  // namespace
@@ -158,8 +206,10 @@ bool Win32Window::Create(const std::wstring& title,
   double scale_factor = dpi / 96.0;
 
   // Borderless (no title bar / window buttons) but still resizable.
-  const DWORD window_style = WS_POPUP | WS_THICKFRAME | WS_SYSMENU |
-                             WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+  // WS_MAXIMIZEBOX is intentionally omitted so a double-click on the drag
+  // band does not put the frameless window into a stuck maximized state.
+  const DWORD window_style =
+      WS_POPUP | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX;
   HWND window = CreateWindow(
       window_class, title.c_str(), window_style,
       Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
@@ -171,13 +221,29 @@ bool Win32Window::Create(const std::wstring& title,
   }
 
   UpdateTheme(window);
-  ApplyRoundedCorners(window);
+
+  // Blend the window border with the dark app UI (Color 0xFF101A2E).
+  COLORREF border_color = RGB(0x10, 0x1A, 0x2E);
+  DwmSetWindowAttribute(window, static_cast<DWMwindowattribute>(DWMWA_BORDER_COLOR),
+                        &border_color, sizeof(border_color));
+  DwmSetWindowAttribute(window, static_cast<DWMwindowattribute>(DWMWA_CAPTION_COLOR),
+                        &border_color, sizeof(border_color));
+
+  ApplyRoundedCorners();
 
   return OnCreate();
 }
 
 bool Win32Window::Show() {
   return ShowWindow(window_handle_, SW_SHOWNORMAL);
+}
+
+void Win32Window::Run() {
+  MSG msg;
+  while (GetMessage(&msg, nullptr, 0, 0)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  }
 }
 
 // static
@@ -224,6 +290,13 @@ Win32Window::MessageHandler(HWND hwnd,
 
       return 0;
     }
+    case WM_GETMINMAXINFO: {
+      auto mmi = reinterpret_cast<MINMAXINFO*>(lparam);
+      UINT dpi = GetWindowDpi(hwnd);
+      mmi->ptMinTrackSize.x = MulDiv(360, dpi, 96);
+      mmi->ptMinTrackSize.y = MulDiv(360, dpi, 96);
+      return 0;
+    }
     case WM_SIZE: {
       RECT rect = GetClientArea();
       if (child_content_ != nullptr) {
@@ -231,20 +304,8 @@ Win32Window::MessageHandler(HWND hwnd,
         MoveWindow(child_content_, rect.left, rect.top, rect.right - rect.left,
                    rect.bottom - rect.top, TRUE);
       }
-      ApplyRoundedCorners(hwnd);
+      ApplyRoundedCorners();
       return 0;
-    }
-
-    case WM_NCHITTEST: {
-      LRESULT result = DefWindowProc(window_handle_, message, wparam, lparam);
-      if (result == HTCLIENT) {
-        POINT pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
-        ScreenToClient(window_handle_, &pt);
-        if (pt.y >= 0 && pt.y < kDragRegionHeight) {
-          return HTCAPTION;
-        }
-      }
-      return result;
     }
 
     case WM_ACTIVATE:
@@ -259,6 +320,51 @@ Win32Window::MessageHandler(HWND hwnd,
   }
 
   return DefWindowProc(window_handle_, message, wparam, lparam);
+}
+
+void Win32Window::Minimize() {
+  if (window_handle_) {
+    ShowWindow(window_handle_, SW_MINIMIZE);
+  }
+}
+
+void Win32Window::Close() {
+  if (window_handle_) {
+    PostMessage(window_handle_, WM_CLOSE, 0, 0);
+  }
+}
+
+void Win32Window::ToggleFullScreen() {
+  if (!window_handle_) {
+    return;
+  }
+
+  if (!fullscreen_) {
+    // Remember the current placement so we can restore it later.
+    GetWindowPlacement(window_handle_, &saved_placement_);
+
+    HMONITOR monitor = MonitorFromWindow(window_handle_, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO monitor_info{};
+    monitor_info.cbSize = sizeof(MONITORINFO);
+    if (!GetMonitorInfo(monitor, &monitor_info)) {
+      return;
+    }
+
+    const RECT rect = monitor_info.rcMonitor;
+    const LONG style = GetWindowLongPtr(window_handle_, GWL_STYLE);
+    SetWindowLongPtr(window_handle_, GWL_STYLE, style & ~WS_THICKFRAME);
+    SetWindowPos(window_handle_, HWND_TOP, rect.left, rect.top,
+                 rect.right - rect.left, rect.bottom - rect.top,
+                 SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOACTIVATE);
+    fullscreen_ = true;
+    ApplyRoundedCorners();
+  } else {
+    const LONG style = GetWindowLongPtr(window_handle_, GWL_STYLE);
+    SetWindowLongPtr(window_handle_, GWL_STYLE, style | WS_THICKFRAME);
+    SetWindowPlacement(window_handle_, &saved_placement_);
+    fullscreen_ = false;
+    ApplyRoundedCorners();
+  }
 }
 
 void Win32Window::Destroy() {
@@ -285,6 +391,13 @@ void Win32Window::SetChildContent(HWND content) {
 
   MoveWindow(content, frame.left, frame.top, frame.right - frame.left,
              frame.bottom - frame.top, true);
+
+  // Subclass the Flutter view so the top strip can be used to drag the
+  // borderless window around.
+  g_original_flutter_view_proc =
+      reinterpret_cast<WNDPROC>(SetWindowLongPtr(
+          content, GWLP_WNDPROC,
+          reinterpret_cast<LONG_PTR>(&FlutterViewSubclassProc)));
 
   SetFocus(child_content_);
 }
@@ -325,4 +438,24 @@ void Win32Window::UpdateTheme(HWND const window) {
     DwmSetWindowAttribute(window, DWMWA_USE_IMMERSIVE_DARK_MODE,
                           &enable_dark_mode, sizeof(enable_dark_mode));
   }
+}
+
+void Win32Window::ApplyRoundedCorners() {
+  if (!window_handle_) {
+    return;
+  }
+  RECT rect;
+  if (!GetWindowRect(window_handle_, &rect)) {
+    return;
+  }
+  const int width = rect.right - rect.left;
+  const int height = rect.bottom - rect.top;
+
+  HRGN region = nullptr;
+  if (fullscreen_) {
+    region = CreateRectRgn(0, 0, width + 1, height + 1);
+  } else {
+    region = CreateRoundRectRgn(0, 0, width + 1, height + 1, 13, 13);
+  }
+  SetWindowRgn(window_handle_, region, TRUE);
 }
