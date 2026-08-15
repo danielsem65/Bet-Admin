@@ -41,15 +41,13 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
       _error = null;
     });
     try {
-      var q = SupabaseService.client
-          .from('predictions')
-          .select('id,title,sport,league,home_team,away_team,match_date,prediction,booking_code,odds,category,analysis,confidence,status,published,created_at')
-          .order('match_date', ascending: false)
-          .range(_offset, _offset + _limit - 1);
+      var q = SupabaseService.client.from('predictions').select(
+        'id,title,sport,league,home_team,away_team,match_date,prediction,booking_code,odds,category,analysis,confidence,status,published,created_at',
+      );
       if (_search.isNotEmpty) {
         q = q.or('title.ilike.%$_search%,league.ilike.%$_search%,home_team.ilike.%$_search%,away_team.ilike.%$_search%');
       }
-      final res = await q;
+      final res = await q.order('match_date', ascending: false).range(_offset, _offset + _limit - 1);
       setState(() {
         _rows = res.cast<Map<String, dynamic>>();
         _hasMore = res.length == _limit;

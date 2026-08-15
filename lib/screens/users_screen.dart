@@ -44,13 +44,11 @@ class _UsersScreenState extends State<UsersScreen> {
     try {
       var q = SupabaseService.client
           .from('profiles')
-          .select('id,full_name,email,role,banned_at,created_at')
-          .order('created_at', ascending: false)
-          .limit(1000);
+          .select('id,full_name,email,role,banned_at,created_at');
       if (_search.isNotEmpty) {
         q = q.or('email.ilike.%$_search%,full_name.ilike.%$_search%');
       }
-      final res = await q;
+      final res = await q.order('created_at', ascending: false).limit(1000);
       setState(() {
         _rows = res.cast<Map<String, dynamic>>();
         _loading = false;
