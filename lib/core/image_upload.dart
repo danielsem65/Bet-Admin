@@ -38,9 +38,9 @@ class ImageUpload {
     final path = 'news/$ts.$sanitizedExt';
 
     final tmp = File('${Directory.systemTemp.path}/betadmin_$ts.$sanitizedExt');
+    final bucket = SupabaseService.client.storage.from(AppConfig.storageBucket);
     try {
       await tmp.writeAsBytes(bytes, flush: true);
-      final bucket = SupabaseService.client.storage.from(AppConfig.storageBucket);
       await bucket.upload(
         path,
         tmp,
