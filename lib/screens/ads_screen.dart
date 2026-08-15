@@ -116,6 +116,7 @@ class _AdsScreenState extends State<AdsScreen> {
   @override
   Widget build(BuildContext context) {
     return PageFrame(
+      maxWidth: 880,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/config.dart';
 import '../core/supabase_service.dart';
 import '../core/theme.dart';
 import '../core/utils.dart';
@@ -100,10 +101,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
                     DataCell(SizedBox(width: 220, child: Text(r['name']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(Text(r['sport']?.toString() ?? '—')),
                     DataCell(r['logo_url']?.toString().isNotEmpty == true
-                        ? InkWell(
-                            onTap: () => snack(context, r['logo_url'].toString()),
-                            child: const Icon(Icons.image, size: 18, color: AppColors.blue),
-                          )
+                        ? _CrestThumb(url: r['logo_url'].toString(), name: r['name']?.toString() ?? '')
                         : const Text('—')),
                     DataCell(Row(
                       mainAxisSize: MainAxisSize.min,
@@ -117,6 +115,52 @@ class _TeamsScreenState extends State<TeamsScreen> {
               }).toList(),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _CrestThumb extends StatelessWidget {
+  final String url;
+  final String name;
+  const _CrestThumb({required this.url, required this.name});
+
+  String get _resolved {
+    if (url.startsWith('http')) return url;
+    final sep = url.startsWith('/') ? '' : '/';
+    return '${AppConfig.adminApiBase}$sep$url';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: name,
+      child: ClipOval(
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: Image.network(
+            _resolved,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, progress) {
+              if (progress == null) return child;
+              return Container(
+                color: AppColors.surface2,
+                child: const Center(
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stack) => Container(
+              color: AppColors.surface2,
+              child: const Icon(Icons.broken_image_outlined, color: AppColors.muted, size: 16),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -199,7 +243,7 @@ class _TeamFormState extends State<TeamForm> {
               const SizedBox(height: 12),
               formField(_sport, 'Sport'),
               const SizedBox(height: 12),
-              formField(_logo, 'Logo URL', hint: 'https://...'),
+              ImageUrlField(controller: _logo, label: 'Logo URL'),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: const TextStyle(color: AppColors.red, fontSize: 13)),

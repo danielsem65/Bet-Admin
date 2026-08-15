@@ -130,6 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return PageFrame(
+      maxWidth: 880,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

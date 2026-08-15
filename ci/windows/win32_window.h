@@ -103,9 +103,6 @@ class Win32Window {
   // Update the window frame's theme to match the system theme.
   static void UpdateTheme(HWND const window);
 
-  // Applies the rounded-corner window region (square when fullscreen).
-  void ApplyRoundedCorners();
-
   bool quit_on_close_ = false;
   bool fullscreen_ = false;
 

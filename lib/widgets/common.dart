@@ -7,7 +7,8 @@ import '../core/theme.dart';
 
 class PageFrame extends StatelessWidget {
   final Widget child;
-  const PageFrame({super.key, required this.child});
+  final double? maxWidth;
+  const PageFrame({super.key, required this.child, this.maxWidth});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +18,15 @@ class PageFrame extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
-            child: child,
+            child: maxWidth == null
+                ? child
+                : Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth!),
+                      child: child,
+                    ),
+                  ),
           ),
         );
       },

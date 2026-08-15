@@ -187,8 +187,6 @@ bool Win32Window::Create(const std::wstring& title,
   DwmSetWindowAttribute(window, DWMWA_CAPTION_COLOR, &border_color,
                         sizeof(border_color));
 
-  ApplyRoundedCorners();
-
   return OnCreate();
 }
 
@@ -270,7 +268,6 @@ Win32Window::MessageHandler(HWND hwnd,
         MoveWindow(child_content_, rect.left, rect.top, rect.right - rect.left,
                    rect.bottom - rect.top, TRUE);
       }
-      ApplyRoundedCorners();
       return 0;
     }
 
@@ -323,13 +320,11 @@ void Win32Window::ToggleFullScreen() {
                  rect.right - rect.left, rect.bottom - rect.top,
                  SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOACTIVATE);
     fullscreen_ = true;
-    ApplyRoundedCorners();
   } else {
     const LONG style = static_cast<LONG>(GetWindowLongPtr(window_handle_, GWL_STYLE));
     SetWindowLongPtr(window_handle_, GWL_STYLE, style | WS_THICKFRAME);
     SetWindowPlacement(window_handle_, &saved_placement_);
     fullscreen_ = false;
-    ApplyRoundedCorners();
   }
 }
 
@@ -397,39 +392,4 @@ void Win32Window::UpdateTheme(HWND const window) {
     DwmSetWindowAttribute(window, DWMWA_USE_IMMERSIVE_DARK_MODE,
                           &enable_dark_mode, sizeof(enable_dark_mode));
   }
-}
-
-void Win32Window::ApplyRoundedCorners() {
-  if (!window_handle_) {
-    return;
-  }
-  RECT rect;
-  if (!GetWindowRect(window_handle_, &rect)) {
-    return;
-  }
-  const int width = rect.right - rect.left;
-  const int height = rect.bottom - rect.top;
-
-  // When maximized or fullscreen the window must cover the screen edge to
-  // edge, so fall back to a square region.
-  bool square = fullscreen_ || IsZoomed(window_handle_);
-  if (!square) {
-    HMONITOR monitor = MonitorFromWindow(window_handle_, MONITOR_DEFAULTTONEAREST);
-    MONITORINFO monitor_info{};
-    monitor_info.cbSize = sizeof(MONITORINFO);
-    if (GetMonitorInfo(monitor, &monitor_info)) {
-      square = rect.left <= monitor_info.rcMonitor.left &&
-               rect.top <= monitor_info.rcMonitor.top &&
-               rect.right >= monitor_info.rcMonitor.right &&
-               rect.bottom >= monitor_info.rcMonitor.bottom;
-    }
-  }
-
-  HRGN region = nullptr;
-  if (square) {
-    region = CreateRectRgn(0, 0, width + 1, height + 1);
-  } else {
-    region = CreateRoundRectRgn(0, 0, width + 1, height + 1, 13, 13);
-  }
-  SetWindowRgn(window_handle_, region, TRUE);
 }
