@@ -224,10 +224,10 @@ bool Win32Window::Create(const std::wstring& title,
 
   // Blend the window border with the dark app UI (Color 0xFF101A2E).
   COLORREF border_color = RGB(0x10, 0x1A, 0x2E);
-  DwmSetWindowAttribute(window, static_cast<DWMwindowattribute>(DWMWA_BORDER_COLOR),
-                        &border_color, sizeof(border_color));
-  DwmSetWindowAttribute(window, static_cast<DWMwindowattribute>(DWMWA_CAPTION_COLOR),
-                        &border_color, sizeof(border_color));
+  DwmSetWindowAttribute(window, DWMWA_BORDER_COLOR, &border_color,
+                        sizeof(border_color));
+  DwmSetWindowAttribute(window, DWMWA_CAPTION_COLOR, &border_color,
+                        sizeof(border_color));
 
   ApplyRoundedCorners();
 
@@ -351,7 +351,7 @@ void Win32Window::ToggleFullScreen() {
     }
 
     const RECT rect = monitor_info.rcMonitor;
-    const LONG style = GetWindowLongPtr(window_handle_, GWL_STYLE);
+    const LONG style = static_cast<LONG>(GetWindowLongPtr(window_handle_, GWL_STYLE));
     SetWindowLongPtr(window_handle_, GWL_STYLE, style & ~WS_THICKFRAME);
     SetWindowPos(window_handle_, HWND_TOP, rect.left, rect.top,
                  rect.right - rect.left, rect.bottom - rect.top,
@@ -359,7 +359,7 @@ void Win32Window::ToggleFullScreen() {
     fullscreen_ = true;
     ApplyRoundedCorners();
   } else {
-    const LONG style = GetWindowLongPtr(window_handle_, GWL_STYLE);
+    const LONG style = static_cast<LONG>(GetWindowLongPtr(window_handle_, GWL_STYLE));
     SetWindowLongPtr(window_handle_, GWL_STYLE, style | WS_THICKFRAME);
     SetWindowPlacement(window_handle_, &saved_placement_);
     fullscreen_ = false;
