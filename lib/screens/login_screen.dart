@@ -56,9 +56,9 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+          SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 72, 24, 24),
+            child: Center(
               child: Container(
                 width: 380,
             padding: const EdgeInsets.all(28),

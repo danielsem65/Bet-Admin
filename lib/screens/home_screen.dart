@@ -4,6 +4,7 @@ import 'package:window_manager/window_manager.dart';
 import '../core/supabase_service.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
+import 'ads_screen.dart';
 import 'dashboard_screen.dart';
 import 'news_screen.dart';
 import 'notifications_screen.dart';
@@ -31,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Predictions',
     'Results',
     'News & Tips',
+    'Ads',
     'Plans',
     'Teams',
     'Subscriptions',
@@ -105,12 +107,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       1 => const PredictionsScreen(),
                       2 => const ResultsScreen(),
                       3 => const NewsScreen(),
-                      4 => const PlansScreen(),
-                      5 => const TeamsScreen(),
-                      6 => const SubscriptionsScreen(),
-                      7 => const PaymentsScreen(),
-                      8 => const UsersScreen(),
-                      9 => const NotificationsScreen(),
+                      4 => const AdsScreen(),
+                      5 => const PlansScreen(),
+                      6 => const TeamsScreen(),
+                      7 => const SubscriptionsScreen(),
+                      8 => const PaymentsScreen(),
+                      9 => const UsersScreen(),
+                      10 => const NotificationsScreen(),
                       _ => const SettingsScreen(),
                     },
                   ),
@@ -170,6 +173,7 @@ class _Sidebar extends StatelessWidget {
     (Icons.sports_soccer_outlined, Icons.sports_soccer, 'Predictions'),
     (Icons.emoji_events_outlined, Icons.emoji_events, 'Results'),
     (Icons.article_outlined, Icons.article, 'News & Tips'),
+    (Icons.campaign_outlined, Icons.campaign, 'Ads'),
     (Icons.workspace_premium_outlined, Icons.workspace_premium, 'Plans'),
     (Icons.groups_outlined, Icons.groups, 'Teams'),
     (Icons.verified_user_outlined, Icons.verified_user, 'Subscriptions'),

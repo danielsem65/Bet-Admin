@@ -17,7 +17,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _rows = [];
-  String _filter = 'active';
+  String _filter = '';
 
   @override
   void initState() {
@@ -97,7 +97,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                   DropdownMenuItem(value: 'expired', child: Text('Expired')),
                   DropdownMenuItem(value: 'cancelled', child: Text('Cancelled')),
                 ],
-                onChanged: (v) => setState(() => _filter = v ?? 'active'),
+                onChanged: (v) => setState(() => _filter = v ?? ''),
               ),
             ],
           ),
