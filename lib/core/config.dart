@@ -5,7 +5,12 @@ class AppConfig {
     'ADMIN_API_BASE',
     defaultValue: 'https://semdev.site.je',
   );
-  static const String appName = 'Positive Elijoe Bet Admin';
+  static const String _storageBucketRaw = String.fromEnvironment(
+    'STORAGE_BUCKET',
+    defaultValue: '',
+  );
+  static const String storageBucket = _storageBucketRaw.isEmpty ? 'uploads' : _storageBucketRaw;
+  static const String appName = 'Positive Elijoe Bet';
 
   static bool get isConfigured => supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 }

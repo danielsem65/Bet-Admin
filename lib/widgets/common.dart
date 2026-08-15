@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/admin_window.dart';
+import '../core/config.dart';
+import '../core/image_upload.dart';
 import '../core/theme.dart';
 
 class PageFrame extends StatelessWidget {
@@ -171,6 +173,139 @@ Widget formField(TextEditingController controller, String label, {bool multiline
     maxLines: multiline ? 4 : 1,
     decoration: InputDecoration(labelText: label, hintText: hint),
   );
+}
+
+/// Image URL field with a live thumbnail preview so the admin can see the
+/// image before posting. Relative paths are resolved against the admin API
+/// base URL.
+class ImageUrlField extends StatefulWidget {
+  final TextEditingController controller;
+  final String label;
+
+  const ImageUrlField({super.key, required this.controller, required this.label});
+
+  @override
+  State<ImageUrlField> createState() => _ImageUrlFieldState();
+}
+
+class _ImageUrlFieldState extends State<ImageUrlField> {
+  late String _url;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _url = widget.controller.text.trim();
+    widget.controller.addListener(_onChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onChanged);
+    super.dispose();
+  }
+
+  void _onChanged() {
+    final url = widget.controller.text.trim();
+    if (url != _url) setState(() => _url = url);
+  }
+
+  Future<void> _pick() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final url = await ImageUpload.pickAndUpload();
+      if (url != null && mounted) {
+        widget.controller.text = url;
+        _onChanged();
+      }
+    } catch (e) {
+      if (mounted) snack(context, 'Upload failed: $e', error: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String? get _previewUrl {
+    final url = _url;
+    if (url.isEmpty) return null;
+    if (url.startsWith('http')) return url;
+    final sep = url.startsWith('/') ? '' : '/';
+    return '${AppConfig.adminApiBase}$sep$url';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: formField(widget.controller, widget.label, hint: 'https://...')),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 36,
+          height: 48,
+          child: IconButton(
+            tooltip: 'Pick image file',
+            padding: EdgeInsets.zero,
+            onPressed: _busy ? null : _pick,
+            icon: _busy
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.folder_open, size: 18, color: AppColors.muted),
+          ),
+        ),
+        const SizedBox(width: 4),
+        SizedBox(width: 96, height: 48, child: _ImageThumb(url: _previewUrl)),
+      ],
+    );
+  }
+}
+
+class _ImageThumb extends StatelessWidget {
+  final String? url;
+
+  const _ImageThumb({this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final u = url;
+    return Container(
+      width: 96,
+      height: 48,
+      decoration: BoxDecoration(
+        color: AppColors.surface2,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: u == null
+          ? const Icon(Icons.image_outlined, color: AppColors.muted, size: 18)
+          : Image.network(
+              u,
+              width: 96,
+              height: 48,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const Center(
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stack) => const Icon(
+                Icons.broken_image_outlined,
+                color: AppColors.red,
+                size: 18,
+              ),
+            ),
+    );
+  }
 }
 
 Widget errorCard(String message, VoidCallback onRetry) {

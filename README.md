@@ -1,4 +1,4 @@
-# Bet-Admin
+# Positive Elijoe Bet
 
 Portable Windows desktop admin app for the **Positive Elijoe Bet** platform.
 Built with Flutter (Windows), data via Supabase PostgREST + Auth, and one

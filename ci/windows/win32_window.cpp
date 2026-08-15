@@ -233,6 +233,10 @@ bool Win32Window::Create(const std::wstring& title,
     return false;
   }
 
+  // The generated runner titles the window after the package name; use the
+  // real product name for the taskbar / Alt-Tab label.
+  SetWindowText(window, L"Positive Elijoe Bet");
+
   UpdateTheme(window);
 
   // Blend the window border with the dark app UI (Color 0xFF101A2E).

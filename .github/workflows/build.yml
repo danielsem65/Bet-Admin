@@ -1,4 +1,4 @@
-name: Build Windows Admin App
+name: Build Positive Elijoe Bet
 
 on:
   push:
@@ -36,13 +36,17 @@ jobs:
         run: flutter pub get
 
       - name: Build Windows release
-        run: flutter build windows --release --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} --dart-define=ADMIN_API_BASE=${{ secrets.ADMIN_API_BASE }}
+        run: flutter build windows --release --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} --dart-define=ADMIN_API_BASE=${{ secrets.ADMIN_API_BASE }} --dart-define=STORAGE_BUCKET=${{ secrets.STORAGE_BUCKET }}
 
       - name: Package portable app
-        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath Bet-Admin-Windows.zip
+        shell: powershell
+        run: |
+          Copy-Item build/windows/x64/runner/Release/bet_admin.exe "build/windows/x64/runner/Release/Positive Elijoe Bet.exe"
+          Remove-Item build/windows/x64/runner/Release/bet_admin.exe
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath Positive-Elijoe-Bet-Windows.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Bet-Admin-Windows
-          path: Bet-Admin-Windows.zip
+          name: Positive-Elijoe-Bet-Windows
+          path: Positive-Elijoe-Bet-Windows.zip
