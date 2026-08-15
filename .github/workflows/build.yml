@@ -20,6 +20,9 @@ jobs:
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop
 
+      - name: Generate Windows runner
+        run: flutter create --platforms=windows .
+
       - name: Install dependencies
         run: flutter pub get
 
