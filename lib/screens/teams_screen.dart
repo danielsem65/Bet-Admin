@@ -1,11 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/config.dart';
 import '../core/supabase_service.dart';
+import '../core/team_logo.dart';
 import '../core/theme.dart';
 import '../core/utils.dart';
 import '../widgets/common.dart';
@@ -105,7 +102,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
                     DataCell(SizedBox(width: 220, child: Text(r['name']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(Text(r['sport']?.toString() ?? '—')),
                     DataCell(r['logo_url']?.toString().isNotEmpty == true
-                        ? _CrestThumb(url: r['logo_url'].toString(), name: r['name']?.toString() ?? '')
+                        ? CrestAvatar(url: r['logo_url'].toString(), name: r['name']?.toString() ?? '')
                         : const Text('—')),
                     DataCell(Row(
                       mainAxisSize: MainAxisSize.min,
@@ -119,52 +116,6 @@ class _TeamsScreenState extends State<TeamsScreen> {
               }).toList(),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _CrestThumb extends StatelessWidget {
-  final String url;
-  final String name;
-  const _CrestThumb({required this.url, required this.name});
-
-  String get _resolved {
-    if (url.startsWith('http')) return url;
-    final sep = url.startsWith('/') ? '' : '/';
-    return '${AppConfig.adminApiBase}$sep$url';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: name,
-      child: ClipOval(
-        child: SizedBox(
-          width: 32,
-          height: 32,
-          child: Image.network(
-            _resolved,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, progress) {
-              if (progress == null) return child;
-              return Container(
-                color: AppColors.surface2,
-                child: const Center(
-                  child: SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              );
-            },
-            errorBuilder: (context, error, stack) => Container(
-              color: AppColors.surface2,
-              child: const Icon(Icons.broken_image_outlined, color: AppColors.muted, size: 16),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -235,7 +186,7 @@ class _TeamFormState extends State<TeamForm> {
     }
   }
 
-  /// Pulls the team crest from TheSportsDB using the entered team name so
+  /// Pulls the team crest from the web using the entered team name so
   /// the admin can save it alongside (or instead of) a picked image.
   Future<String?> _pullCrest() async {
     final name = _name.text.trim();
@@ -243,16 +194,7 @@ class _TeamFormState extends State<TeamForm> {
       snack(context, 'Enter a team name first.', error: true);
       return null;
     }
-    final res = await http.get(
-      Uri.parse(
-        'https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${Uri.encodeQueryComponent(name)}',
-      ),
-    );
-    if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
-    final body = jsonDecode(res.body) as Map<String, dynamic>;
-    final teams = body['teams'];
-    if (teams is! List || teams.isEmpty) return null;
-    return (teams.first as Map<String, dynamic>)['strTeamBadge']?.toString();
+    return fetchTeamLogoFromWeb(name);
   }
 
   @override

@@ -384,6 +384,79 @@ class _ImageThumb extends StatelessWidget {
   }
 }
 
+/// Circular team crest thumbnail used in tables and forms. Resolves relative
+/// URLs against the admin API base; falls back to the team's initials when
+/// there is no URL or the image fails to load.
+class CrestAvatar extends StatelessWidget {
+  final String name;
+  final String? url;
+  final double size;
+  const CrestAvatar({super.key, required this.name, this.url, this.size = 32});
+
+  String? get _resolved {
+    final u = url;
+    if (u == null || u.isEmpty) return null;
+    if (u.startsWith('http')) return u;
+    final sep = u.startsWith('/') ? '' : '/';
+    return '${AppConfig.adminApiBase}$sep$u';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = _resolved;
+    return Tooltip(
+      message: name,
+      child: ClipOval(
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: resolved == null
+              ? _CrestInitials(name: name)
+              : Image.network(
+                  resolved,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return Container(
+                      color: AppColors.surface2,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stack) => _CrestInitials(name: name),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CrestInitials extends StatelessWidget {
+  final String name;
+  const _CrestInitials({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final initials = parts.isEmpty
+        ? '?'
+        : parts.take(2).map((p) => p.substring(0, 1).toUpperCase()).join();
+    return Container(
+      color: AppColors.surface2,
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: const TextStyle(color: AppColors.muted, fontSize: 10, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
 Widget errorCard(String message, VoidCallback onRetry) {
   return Container(
     padding: const EdgeInsets.all(20),

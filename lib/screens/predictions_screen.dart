@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/supabase_service.dart';
+import '../core/team_logo.dart';
 import '../core/theme.dart';
 import '../core/utils.dart';
 import '../widgets/common.dart';
@@ -287,6 +290,8 @@ class _PredictionFormState extends State<PredictionForm> {
       _category = r['category']?.toString() ?? 'FREE';
       _status = r['status']?.toString() ?? 'Pending';
       _published = r['published'] == true;
+    } else {
+      _sport.text = 'Football';
     }
   }
 
@@ -302,6 +307,23 @@ class _PredictionFormState extends State<PredictionForm> {
     final t = s.trim();
     if (t.isEmpty) return null;
     return double.tryParse(t);
+  }
+
+  Future<void> _pickDateTime() async {
+    final now = DateTime.now();
+    final initial = parseDate(_date.text) ?? DateTime(now.year, now.month, now.day, 18, 0);
+    final d = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 3),
+    );
+    if (d == null || !mounted) return;
+    final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(initial));
+    if (t == null || !mounted) return;
+    setState(() {
+      _date.text = '${d.year}-${_pad2(d.month)}-${_pad2(d.day)} ${_pad2(t.hour)}:${_pad2(t.minute)}';
+    });
   }
 
   Future<void> _save() async {
@@ -332,7 +354,7 @@ class _PredictionFormState extends State<PredictionForm> {
         if (_num(_odds.text) != null) 'odds': _num(_odds.text),
         'category': _category,
         'analysis': _analysis.text.trim(),
-        if (_num(_confidence.text) != null) 'confidence': _num(_confidence.text),
+        if (int.tryParse(_confidence.text.trim()) != null) 'confidence': int.tryParse(_confidence.text.trim()),
         'status': _status,
         'published': _published,
       };
@@ -345,6 +367,8 @@ class _PredictionFormState extends State<PredictionForm> {
       }
       if (mounted) {
         Navigator.pop(context, data);
+        // Mirror the website: auto-save team crests so icons show on the site.
+        unawaited(ensureTeamLogos([_home.text.trim(), _away.text.trim()]));
       }
     } on PostgrestException catch (e) {
       if (mounted) setState(() => _error = '${e.message} (${e.code})');
@@ -373,13 +397,22 @@ class _PredictionFormState extends State<PredictionForm> {
                 Expanded(child: formField(_league, 'League')),
               ]),
               const SizedBox(height: 12),
-              Row(children: [
-                Expanded(child: formField(_home, 'Home team')),
-                const SizedBox(width: 10),
-                Expanded(child: formField(_away, 'Away team')),
-              ]),
+              _TeamCrestField(controller: _home, label: 'Home team'),
               const SizedBox(height: 12),
-              formField(_date, 'Match date (YYYY-MM-DD HH:MM)', hint: 'e.g. 2026-08-20 18:00'),
+              _TeamCrestField(controller: _away, label: 'Away team'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _date,
+                decoration: InputDecoration(
+                  labelText: 'Match date *',
+                  hintText: 'YYYY-MM-DD HH:MM',
+                  suffixIcon: IconButton(
+                    tooltip: 'Pick date and time',
+                    icon: const Icon(Icons.calendar_month),
+                    onPressed: _pickDateTime,
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
               formField(_tip, 'Prediction / tip *'),
               const SizedBox(height: 12),
@@ -446,6 +479,120 @@ class _PredictionFormState extends State<PredictionForm> {
           child: _busy
               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
               : Text(_isEdit ? 'Save changes' : 'Create'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Home/Away team input with a live crest preview and a pull button that
+/// fetches + saves the crest (into the `teams` table) from the web.
+class _TeamCrestField extends StatefulWidget {
+  final TextEditingController controller;
+  final String label;
+  const _TeamCrestField({required this.controller, required this.label});
+
+  @override
+  State<_TeamCrestField> createState() => _TeamCrestFieldState();
+}
+
+class _TeamCrestFieldState extends State<_TeamCrestField> {
+  String? _logoUrl;
+  bool _pulling = false;
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onChanged);
+    _lookup();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    widget.controller.removeListener(_onChanged);
+    super.dispose();
+  }
+
+  void _onChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), _lookup);
+  }
+
+  Future<void> _lookup() async {
+    final name = widget.controller.text.trim();
+    if (!mounted) return;
+    if (name.isEmpty) {
+      setState(() => _logoUrl = null);
+      return;
+    }
+    try {
+      final res = await SupabaseService.client
+          .from('teams')
+          .select('logo_url')
+          .eq('name', name)
+          .maybeSingle();
+      if (!mounted) return;
+      final url = res?['logo_url']?.toString() ?? '';
+      setState(() => _logoUrl = url.isEmpty ? null : url);
+    } catch (_) {}
+  }
+
+  Future<void> _pull() async {
+    if (_pulling) return;
+    final name = widget.controller.text.trim();
+    if (name.isEmpty) {
+      snack(context, 'Enter a team name first.', error: true);
+      return;
+    }
+    setState(() => _pulling = true);
+    try {
+      final url = await ensureTeamLogo(name);
+      if (!mounted) return;
+      setState(() => _logoUrl = (url == null || url.isEmpty) ? null : url);
+      if (url == null) {
+        snack(context, 'No crest found. Try the official team name.', error: true);
+      } else {
+        snack(context, 'Crest saved for $name');
+      }
+    } catch (e) {
+      if (mounted) snack(context, 'Pull failed: $e', error: true);
+    } finally {
+      if (mounted) setState(() => _pulling = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 36,
+          height: 48,
+          child: Center(
+            child: CrestAvatar(name: widget.controller.text.trim(), url: _logoUrl),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: formField(widget.controller, widget.label)),
+        const SizedBox(width: 4),
+        SizedBox(
+          width: 36,
+          height: 48,
+          child: IconButton(
+            tooltip: 'Pull crest from web',
+            padding: EdgeInsets.zero,
+            onPressed: _pulling ? null : _pull,
+            icon: _pulling
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.cloud_download_outlined, size: 18, color: AppColors.muted),
+          ),
         ),
       ],
     );
