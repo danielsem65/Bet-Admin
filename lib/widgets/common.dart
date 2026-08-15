@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 
-import '../core/admin_window.dart';
 import '../core/config.dart';
 import '../core/image_upload.dart';
 import '../core/theme.dart';
@@ -340,35 +340,99 @@ class LoadingBox extends StatelessWidget {
   }
 }
 
-/// Custom minimize / fullscreen / close buttons for the frameless window.
-/// Keep the total width in sync with kWindowControlRightWidth in
-/// ci/windows/win32_window.cpp so the drag band stops before these buttons.
-class WindowControls extends StatelessWidget {
+/// Custom minimize / maximize / fullscreen / close buttons for the frameless
+/// window, driven through window_manager (same approach as SemFlix TV).
+class WindowControls extends StatefulWidget {
   const WindowControls({super.key});
 
   @override
+  State<WindowControls> createState() => _WindowControlsState();
+}
+
+class _WindowControlsState extends State<WindowControls> {
+  bool _maximized = false;
+  bool _fullscreen = false;
+  late final WindowListener _listener;
+
+  @override
+  void initState() {
+    super.initState();
+    _listener = _WindowControlsListener(this);
+    windowManager.addListener(_listener);
+    windowManager.isMaximized().then((v) {
+      if (mounted) setState(() => _maximized = v);
+    });
+    windowManager.isFullScreen().then((v) {
+      if (mounted) setState(() => _fullscreen = v);
+    });
+  }
+
+  @override
+  void dispose() {
+    windowManager.removeListener(_listener);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _WindowControlButton(
           icon: Icons.remove_rounded,
           tooltip: 'Minimize',
-          onTap: AdminWindow.minimize,
+          onTap: windowManager.minimize,
         ),
         _WindowControlButton(
-          icon: Icons.open_in_full_rounded,
-          tooltip: 'Toggle fullscreen',
-          onTap: AdminWindow.toggleFullScreen,
+          icon: _maximized ? Icons.filter_none_rounded : Icons.crop_square_rounded,
+          tooltip: _maximized ? 'Restore' : 'Maximize',
+          onTap: () {
+            if (_maximized) {
+              windowManager.unmaximize();
+            } else {
+              windowManager.maximize();
+            }
+          },
+        ),
+        _WindowControlButton(
+          icon: _fullscreen ? Icons.fullscreen_exit_rounded : Icons.open_in_full_rounded,
+          tooltip: _fullscreen ? 'Exit fullscreen' : 'Fullscreen',
+          onTap: () => windowManager.setFullScreen(!_fullscreen),
         ),
         _WindowControlButton(
           icon: Icons.close_rounded,
           tooltip: 'Close',
           close: true,
-          onTap: AdminWindow.close,
+          onTap: windowManager.close,
         ),
       ],
     );
+  }
+}
+
+class _WindowControlsListener extends WindowListener {
+  _WindowControlsListener(this.state);
+
+  final _WindowControlsState state;
+
+  @override
+  void onWindowMaximize() {
+    if (state.mounted) state.setState(() => state._maximized = true);
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    if (state.mounted) state.setState(() => state._maximized = false);
+  }
+
+  @override
+  void onWindowEnterFullScreen() {
+    if (state.mounted) state.setState(() => state._fullscreen = true);
+  }
+
+  @override
+  void onWindowLeaveFullScreen() {
+    if (state.mounted) state.setState(() => state._fullscreen = false);
   }
 }
 

@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'core/config.dart';
 import 'core/supabase_service.dart';
@@ -9,8 +12,31 @@ import 'screens/login_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows) {
+    await _initWindow();
+  }
   await SupabaseService.init();
   runApp(const BetAdminApp());
+}
+
+/// Configures the frameless window. Dragging and the custom minimize /
+/// maximize / fullscreen / close buttons are handled through window_manager
+/// (the same approach used by SemFlix TV), which talks to the top-level
+/// window directly so drags move the whole window.
+Future<void> _initWindow() async {
+  await windowManager.ensureInitialized();
+  const options = WindowOptions(
+    size: Size(1280, 720),
+    center: true,
+    title: 'Positive Elijoe Bet',
+    backgroundColor: AppColors.bg,
+    titleBarStyle: TitleBarStyle.hidden,
+    skipTaskbar: false,
+  );
+  windowManager.waitUntilReadyToShow(options, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
 }
 
 class BetAdminApp extends StatelessWidget {

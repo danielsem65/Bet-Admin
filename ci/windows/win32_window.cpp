@@ -29,14 +29,6 @@ namespace {
 #define DWMWA_CAPTION_COLOR 35
 #endif
 
-/// Height (in logical pixels) of the draggable strip at the top of the window.
-/// Must match the height of the Flutter drag strip.
-constexpr int kDragBandHeight = 36;
-
-/// Width (in logical pixels) reserved at the top-right of the drag strip for
-/// the custom minimize / fullscreen / close buttons.
-constexpr int kWindowControlRightWidth = 120;
-
 constexpr const wchar_t kWindowClassName[] = L"FLUTTER_RUNNER_WIN32_WINDOW";
 
 /// Registry key for app theme preference.
@@ -84,57 +76,6 @@ UINT GetWindowDpi(HWND hwnd) {
     ReleaseDC(hwnd, dc);
   }
   return dpi > 0 ? dpi : 96;
-}
-
-// Original window procedure of the hosted Flutter view, saved before the view
-// is subclassed so hit testing can be customized.
-WNDPROC g_original_flutter_view_proc = nullptr;
-
-// Subclass procedure installed on the Flutter view window.
-//
-// Real input hit-testing is performed against this child window, so the
-// draggable top band is implemented here by returning HTCAPTION. This lets the
-// borderless window be moved by dragging the top strip while keeping the
-// custom window-control buttons (top-right) clickable.
-LRESULT CALLBACK FlutterViewSubclassProc(HWND hwnd,
-                                         UINT const message,
-                                         WPARAM const wparam,
-                                         LPARAM const lparam) noexcept {
-  if (message == WM_NCHITTEST) {
-    LRESULT result =
-        CallWindowProc(g_original_flutter_view_proc, hwnd, message, wparam, lparam);
-    if (result == HTCLIENT) {
-      POINT pt = {GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
-      ScreenToClient(hwnd, &pt);
-
-      RECT client;
-      GetClientRect(hwnd, &client);
-      const int width = client.right - client.left;
-
-      UINT dpi = GetWindowDpi(hwnd);
-      const int band_height = MulDiv(kDragBandHeight, dpi, 96);
-      const int reserved_width = MulDiv(kWindowControlRightWidth, dpi, 96);
-
-      if (pt.y >= 0 && pt.y < band_height && pt.x < width - reserved_width) {
-        return HTCAPTION;
-      }
-    }
-    return result;
-  }
-
-  // A child window returning HTCAPTION receives the non-client mouse messages
-  // itself. DefWindowProc would then run the caption drag loop against the
-  // *child*, moving the hosted content inside a stationary frame. Route the
-  // caption interaction to the top-level window so the whole window moves.
-  if (message == WM_NCLBUTTONDOWN || message == WM_NCLBUTTONUP ||
-      message == WM_NCLBUTTONDBLCLK) {
-    if ((static_cast<LONG>(wparam) & 0xFFFF) == HTCAPTION) {
-      SendMessage(GetAncestor(hwnd, GA_ROOT), message, wparam, lparam);
-      return 0;
-    }
-  }
-
-  return CallWindowProc(g_original_flutter_view_proc, hwnd, message, wparam, lparam);
 }
 
 }  // namespace
@@ -312,6 +253,14 @@ Win32Window::MessageHandler(HWND hwnd,
       UINT dpi = GetWindowDpi(hwnd);
       mmi->ptMinTrackSize.x = MulDiv(360, dpi, 96);
       mmi->ptMinTrackSize.y = MulDiv(360, dpi, 96);
+      // Maximize to the work area so the taskbar stays visible.
+      RECT work{};
+      if (SystemParametersInfo(SPI_GETWORKAREA, 0, &work, 0)) {
+        mmi->ptMaxPosition.x = work.left;
+        mmi->ptMaxPosition.y = work.top;
+        mmi->ptMaxSize.x = work.right - work.left;
+        mmi->ptMaxSize.y = work.bottom - work.top;
+      }
       return 0;
     }
     case WM_SIZE: {
@@ -409,13 +358,6 @@ void Win32Window::SetChildContent(HWND content) {
   MoveWindow(content, frame.left, frame.top, frame.right - frame.left,
              frame.bottom - frame.top, true);
 
-  // Subclass the Flutter view so the top strip can be used to drag the
-  // borderless window around.
-  g_original_flutter_view_proc =
-      reinterpret_cast<WNDPROC>(SetWindowLongPtr(
-          content, GWLP_WNDPROC,
-          reinterpret_cast<LONG_PTR>(&FlutterViewSubclassProc)));
-
   SetFocus(child_content_);
 }
 
@@ -468,8 +410,23 @@ void Win32Window::ApplyRoundedCorners() {
   const int width = rect.right - rect.left;
   const int height = rect.bottom - rect.top;
 
+  // When maximized or fullscreen the window must cover the screen edge to
+  // edge, so fall back to a square region.
+  bool square = fullscreen_ || IsZoomed(window_handle_);
+  if (!square) {
+    HMONITOR monitor = MonitorFromWindow(window_handle_, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO monitor_info{};
+    monitor_info.cbSize = sizeof(MONITORINFO);
+    if (GetMonitorInfo(monitor, &monitor_info)) {
+      square = rect.left <= monitor_info.rcMonitor.left &&
+               rect.top <= monitor_info.rcMonitor.top &&
+               rect.right >= monitor_info.rcMonitor.right &&
+               rect.bottom >= monitor_info.rcMonitor.bottom;
+    }
+  }
+
   HRGN region = nullptr;
-  if (fullscreen_) {
+  if (square) {
     region = CreateRectRgn(0, 0, width + 1, height + 1);
   } else {
     region = CreateRoundRectRgn(0, 0, width + 1, height + 1, 13, 13);

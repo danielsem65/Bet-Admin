@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../core/config.dart';
 import '../core/supabase_service.dart';
@@ -147,13 +148,19 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Row(
             children: [
               Expanded(
-                child: Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Color(0x8C8A95AC),
-                      borderRadius: BorderRadius.all(Radius.circular(2)),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onPanStart: (_) => windowManager.startDragging(),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 40,
+                      height: 4,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Color(0x8C8A95AC),
+                          borderRadius: BorderRadius.all(Radius.circular(2)),
+                        ),
+                      ),
                     ),
                   ),
                 ),
