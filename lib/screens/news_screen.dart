@@ -32,7 +32,7 @@ class _NewsScreenState extends State<NewsScreen> {
     try {
       final res = await SupabaseService.client
           .from('news')
-          .select('id,title,published,created_at')
+          .select('id,title,body,image_1,image_2,image_3,published,created_at')
           .order('created_at', ascending: false)
           .limit(300);
       setState(() {
@@ -183,6 +183,10 @@ class _NewsFormState extends State<NewsForm> {
   Future<void> _save() async {
     if (_title.text.trim().isEmpty) {
       setState(() => _error = 'Title is required.');
+      return;
+    }
+    if (_body.text.trim().isEmpty) {
+      setState(() => _error = 'Body is required.');
       return;
     }
     setState(() {
