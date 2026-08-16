@@ -228,7 +228,7 @@ class _NewsFormState extends State<NewsForm> {
             children: [
               formField(_title, 'Title *'),
               const SizedBox(height: 12),
-              formField(_body, 'Body', multiline: true),
+              formField(_body, 'Body', multiline: true, hint: 'Use *text* to make it bold'),
               const SizedBox(height: 12),
               ImageUrlField(controller: _img1, label: 'Image URL 1'),
               const SizedBox(height: 10),
