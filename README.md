@@ -44,13 +44,13 @@ Repository secrets required:
 |-------------------|--------------------------------------------------------|
 | `SUPABASE_URL`    | `https://<project>.supabase.co`                        |
 | `SUPABASE_ANON_KEY` | Supabase anon (publishable) key                     |
-| `ADMIN_API_BASE`  | Website origin, e.g. `https://semdev.site.je`          |
+| `ADMIN_API_BASE`  | Website origin, e.g. `https://positive32.com`          |
 
 ## Local development
 
 ```bash
 flutter pub get
-flutter run -d windows --dart-define=SUPABASE_URL=https://<project>.supabase.co --dart-define=SUPABASE_ANON_KEY=<anon-key> --dart-define=ADMIN_API_BASE=https://semdev.site.je
+flutter run -d windows --dart-define=SUPABASE_URL=https://<project>.supabase.co --dart-define=SUPABASE_ANON_KEY=<anon-key> --dart-define=ADMIN_API_BASE=https://positive32.com
 ```
 
 Only `admin` role accounts (not banned) can sign in. See `auth.php` /

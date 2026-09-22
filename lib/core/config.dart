@@ -3,7 +3,7 @@ class AppConfig {
   static const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
   static const String adminApiBase = String.fromEnvironment(
     'ADMIN_API_BASE',
-    defaultValue: 'https://semdev.site.je',
+    defaultValue: 'https://positive32.com',
   );
   static const String _storageBucketRaw = String.fromEnvironment(
     'STORAGE_BUCKET',
