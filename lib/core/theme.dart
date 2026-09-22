@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const bg = Color(0xFF0B1220);
-  static const surface = Color(0xFF101A2E);
-  static const surface2 = Color(0xFF16213A);
-  static const border = Color(0xFF26334F);
-  static const text = Color(0xFFE6EAF3);
-  static const muted = Color(0xFF8A95AC);
-  static const gold = Color(0xFFFBBF24);
-  static const green = Color(0xFF34D399);
-  static const red = Color(0xFFF87171);
+  static const bg = Color(0xFF0E1A3C);
+  static const surface = Color(0xFF12234D);
+  static const surface2 = Color(0xFF1B2D60);
+  static const border = Color(0xFF2E4169);
+  static const text = Color(0xFFF7F9FF);
+  static const muted = Color(0xFFC9D6EC);
+  static const gold = Color(0xFFFFA435);
+  static const green = Color(0xFF3B82F6);
+  static const red = Color(0xFFEF4444);
   static const blue = Color(0xFF60A5FA);
   static const purple = Color(0xFFA78BFA);
 }
@@ -17,7 +17,7 @@ class AppColors {
 class AppTheme {
   static ThemeData get dark {
     const scheme = ColorScheme.dark(
-      primary: AppColors.gold,
+      primary: AppColors.green,
       secondary: AppColors.gold,
       surface: AppColors.surface,
       onSurface: AppColors.text,
@@ -39,20 +39,20 @@ class AppTheme {
         unselectedIconTheme: IconThemeData(color: AppColors.muted),
         selectedLabelTextStyle: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
         unselectedLabelTextStyle: TextStyle(color: AppColors.muted),
-        indicatorColor: Color(0x33FBBF24),
+        indicatorColor: Color(0x33FFA435),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.bg,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.gold, width: 1.5)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.green, width: 1.5)),
         labelStyle: const TextStyle(color: AppColors.muted),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.gold,
-          foregroundColor: const Color(0xFF0B1220),
+          backgroundColor: AppColors.green,
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
@@ -60,13 +60,13 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.gold,
-          side: const BorderSide(color: Color(0x66FBBF24)),
+          foregroundColor: AppColors.green,
+          side: const BorderSide(color: Color(0x663B82F6)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: AppColors.gold),
+        style: TextButton.styleFrom(foregroundColor: AppColors.green),
       ),
       dataTableTheme: DataTableThemeData(
         headingRowColor: const WidgetStatePropertyAll(AppColors.surface2),

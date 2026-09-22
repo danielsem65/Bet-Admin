@@ -302,7 +302,7 @@ class _AdCardPreviewState extends State<_AdCardPreview> {
                     ? const DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Color(0xFF1A2542), Color(0xFF0B1220)],
+                            colors: [Color(0xFF1B2D60), Color(0xFF0E1A3C)],
                           ),
                         ),
                         child: Center(
