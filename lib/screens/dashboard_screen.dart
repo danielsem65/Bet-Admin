@@ -66,9 +66,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       double rev = 0;
       for (final r in payRes) {
-        totalPayments++;
         if (r['status'] == 'success') rev += (r['amount'] as num?)?.toDouble() ?? 0;
       }
+      totalPayments = payRes.length;
 
       setState(() {
         users = usersRes.length;
