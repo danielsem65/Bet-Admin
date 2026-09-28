@@ -18,6 +18,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _error;
   int users = 0;
   int activeSubs = 0;
+  int expiredSubs = 0;
   int totalPayments = 0;
   int free = 0;
   int vip = 0;
@@ -46,6 +47,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .select('id')
           .eq('status', 'active')
           .gte('end_date', now);
+      final expiredRes = await sb
+          .from('subscriptions')
+          .select('id')
+          .eq('status', 'active')
+          .lt('end_date', now);
       final payRes = await sb.from('payments').select('amount,status');
       final freeRes = await sb.from('predictions').select('id').eq('published', true).eq('category', 'FREE');
       final vipRes = await sb.from('predictions').select('id').eq('published', true).eq('category', 'VIP');
@@ -67,6 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         users = usersRes.length;
         activeSubs = subsRes.length;
+        expiredSubs = expiredRes.length;
         revenue = rev;
         free = freeRes.length;
         vip = vipRes.length;
@@ -115,6 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     StatCard(label: 'Total Users', value: '$users', icon: Icons.people, color: AppColors.blue),
                     StatCard(label: 'Active Subscriptions', value: '$activeSubs', icon: Icons.verified_user, color: AppColors.green),
+                    StatCard(label: 'Expired Subscriptions', value: '$expiredSubs', icon: Icons.event_busy, color: AppColors.red),
                     StatCard(label: 'Revenue', value: money(revenue), icon: Icons.payments, color: AppColors.gold),
                     StatCard(label: 'Total Payments', value: '$totalPayments', icon: Icons.receipt_long, color: AppColors.purple),
                     StatCard(label: 'Free Predictions', value: '$free', icon: Icons.sports_soccer, color: AppColors.green),
