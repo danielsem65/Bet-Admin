@@ -173,12 +173,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPanStart: (_) => windowManager.startDragging(),
                   child: const Center(
                     child: SizedBox(
-                      width: 40,
-                      height: 4,
+                      width: 100,
+                      height: 4.5,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: Color(0x8CC9D6EC),
-                          borderRadius: BorderRadius.all(Radius.circular(2)),
+                          borderRadius: BorderRadius.all(Radius.circular(4.5)),
                         ),
                       ),
                     ),
