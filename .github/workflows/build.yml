@@ -32,6 +32,15 @@ jobs:
           Copy-Item -Force ci/windows/flutter_window.h windows/runner/flutter_window.h
           Copy-Item -Force ci/windows/app_icon.ico windows/runner/resources/app_icon.ico
 
+      - name: Set Windows file properties
+        shell: powershell
+        run: |
+          $rc = 'windows/runner/Runner.rc'
+          $text = Get-Content -LiteralPath $rc -Raw
+          $text = $text -replace 'bet_admin', 'Positive Elijoe Bet'
+          $text = $text -replace 'com\.example', 'Positive Elijoe Bet'
+          Set-Content -LiteralPath $rc -Value $text -Encoding ASCII
+
       - name: Install dependencies
         run: flutter pub get
 
