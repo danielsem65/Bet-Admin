@@ -43,9 +43,12 @@ Widget categoryBadge(String c) {
 Widget statusBadge(String s) {
   final color = switch (s.toLowerCase()) {
     'won' => AppColors.green,
+    'active' => AppColors.green,
     'lost' => AppColors.red,
+    'expired' => AppColors.red,
     'void' => AppColors.blue,
     'pending' => AppColors.muted,
+    'cancelled' => AppColors.muted,
     _ => AppColors.muted,
   };
   return badge(s, color);

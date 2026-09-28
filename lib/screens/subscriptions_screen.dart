@@ -74,9 +74,19 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     }
   }
 
+  String _effStatus(Map<String, dynamic> r) {
+    final s = r['status']?.toString() ?? '';
+    if (s != 'active') return s;
+    final end = r['end_date']?.toString();
+    if (end == null || end.isEmpty) return s;
+    final parsed = DateTime.tryParse(end);
+    if (parsed == null) return s;
+    return parsed.isBefore(DateTime.now().toUtc()) ? 'expired' : 'active';
+  }
+
   List<Map<String, dynamic>> get _filtered => _filter.isEmpty
       ? _rows
-      : _rows.where((r) => (r['status']?.toString() ?? '') == _filter).toList();
+      : _rows.where((r) => _effStatus(r) == _filter).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +139,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                     DataCell(Text(p?['name']?.toString() ?? '—')),
                     DataCell(Text(fmtDate(r['start_date']?.toString()))),
                     DataCell(Text(fmtDate(r['end_date']?.toString()))),
-                    DataCell(statusBadge(r['status']?.toString() ?? '')),
+                    DataCell(statusBadge(_effStatus(r))),
                     DataCell(Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
