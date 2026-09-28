@@ -72,6 +72,7 @@ class _StartupScreenState extends State<StartupScreen> {
   late final Future<Widget> _target = _resolve();
 
   Future<Widget> _resolve() async {
+    if (!AppConfig.isConfigured) return const LoginScreen();
     if (Supabase.instance.client.auth.currentSession == null) {
       return const LoginScreen();
     }
@@ -87,8 +88,21 @@ class _StartupScreenState extends State<StartupScreen> {
     return FutureBuilder<Widget>(
       future: _target,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-          return snapshot.data!;
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.hasData) return snapshot.data!;
+          if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'Could not start the app.\n\n${snapshot.error}',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            );
+          }
         }
         return const Scaffold(
           body: Center(
