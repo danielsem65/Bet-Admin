@@ -21,6 +21,7 @@ class _UsersScreenState extends State<UsersScreen> {
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _rows = [];
+  final Map<String, dynamic> _auth = {};
   final _searchCtrl = TextEditingController();
   String _search = '';
 
@@ -49,8 +50,21 @@ class _UsersScreenState extends State<UsersScreen> {
         q = q.or('email.ilike.%$_search%,full_name.ilike.%$_search%');
       }
       final res = await q.order('created_at', ascending: false).limit(1000);
+      Map<String, dynamic> auth = {};
+      try {
+        final ares = await SupabaseService.client.rpc('admin_user_auth_state');
+        for (final r in (ares as List)) {
+          final m = Map<String, dynamic>.from(r as Map);
+          if (m['id'] != null) auth[m['id'].toString()] = m;
+        }
+      } catch (_) {
+        auth = {};
+      }
       setState(() {
         _rows = res.cast<Map<String, dynamic>>();
+        _auth
+          ..clear()
+          ..addAll(auth);
         _loading = false;
       });
     } catch (e) {
@@ -175,13 +189,18 @@ class _UsersScreenState extends State<UsersScreen> {
                     ? r['full_name'].toString()
                     : (r['email']?.toString() ?? '—');
                 final banned = r['banned_at'] != null;
+                final confirmed = _auth[r['id']]?['email_confirmed_at'] != null;
                 return DataRow(
                   cells: [
                     DataCell(SizedBox(width: 240, child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis))),
                     DataCell(badge(r['role']?.toString() ?? 'user',
                         r['role'] == 'admin' ? AppColors.gold : AppColors.blue)),
                     DataCell(Text(fmtDate(r['created_at']?.toString()))),
-                    DataCell(badge(banned ? 'banned' : 'active', banned ? AppColors.red : AppColors.green)),
+                    DataCell(badge(
+                        banned ? 'banned' : (confirmed ? 'active' : 'unconfirmed'),
+                        banned
+                            ? AppColors.red
+                            : (confirmed ? AppColors.green : AppColors.gold))),
                     DataCell(Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
