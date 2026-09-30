@@ -34,7 +34,17 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       await Supabase.instance.client.auth.signInWithPassword(email: email, password: pass);
-      if (!await SupabaseService.isAdmin()) {
+      final status = await SupabaseService.adminStatus();
+      if (status == AdminStatus.offline) {
+        // The role check could not reach the server, so this says nothing about
+        // the account's permissions. Do not sign the session out.
+        await SupabaseService.signOut();
+        if (mounted) {
+          setState(() => _error = 'Could not verify admin access. Check your connection and try again.');
+        }
+        return;
+      }
+      if (status != AdminStatus.admin) {
         await SupabaseService.signOut();
         if (mounted) setState(() => _error = 'This account does not have admin access.');
         return;

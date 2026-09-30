@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'core/config.dart';
+import 'core/connectivity_service.dart';
 import 'core/supabase_service.dart';
 import 'core/theme.dart';
 import 'screens/home_screen.dart';
@@ -60,6 +62,16 @@ class BetAdminApp extends StatelessWidget {
   }
 }
 
+/// Where startup ended up: a screen to show, or "no connection" so the session
+/// is left untouched and startup can be retried.
+class _Startup {
+  const _Startup.screen(this.screen) : offline = false;
+  const _Startup.noConnection() : screen = null, offline = true;
+
+  final Widget? screen;
+  final bool offline;
+}
+
 /// Decides the first screen based on a persisted Supabase session, so the app
 /// does not log the admin out every time it is reopened.
 class StartupScreen extends StatefulWidget {
@@ -70,7 +82,26 @@ class StartupScreen extends StatefulWidget {
 }
 
 class _StartupScreenState extends State<StartupScreen> {
-  late Future<Widget> _target = _resolve();
+  late Future<_Startup> _target = _resolve();
+  StreamSubscription<List<ConnectivityResult>>? _connectivity;
+  bool _offline = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Resume automatically once the machine is back online, so an admin who
+    // opened the app on a plane does not have to press anything.
+    _connectivity = ConnectivityService.onChange.listen((results) {
+      final back = results.any((r) => r != ConnectivityResult.none);
+      if (back && _offline && mounted) _retry();
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivity?.cancel();
+    super.dispose();
+  }
 
   void _retry() {
     setState(() {
@@ -78,25 +109,44 @@ class _StartupScreenState extends State<StartupScreen> {
     });
   }
 
-  Future<Widget> _resolve() async {
-    if (!AppConfig.isConfigured) return const LoginScreen();
+  Future<_Startup> _resolve() async {
+    if (!AppConfig.isConfigured) {
+      _offline = false;
+      return const _Startup.screen(LoginScreen());
+    }
     if (Supabase.instance.client.auth.currentSession == null) {
-      return const LoginScreen();
+      _offline = false;
+      return const _Startup.screen(LoginScreen());
     }
-    if (await SupabaseService.isAdmin()) {
-      return const HomeScreen();
+
+    // Check the link before the role query so a disconnected start never
+    // reaches the sign-out branch at all.
+    if (!await ConnectivityService.isOnline()) {
+      _offline = true;
+      return const _Startup.noConnection();
     }
-    await SupabaseService.signOut();
-    return const LoginScreen();
+
+    switch (await SupabaseService.adminStatus()) {
+      case AdminStatus.admin:
+        _offline = false;
+        return const _Startup.screen(HomeScreen());
+      case AdminStatus.offline:
+        _offline = true;
+        return const _Startup.noConnection();
+      case AdminStatus.notAdmin:
+        // Only a real "not an admin" verdict ends the session.
+        await SupabaseService.signOut();
+        _offline = false;
+        return const _Startup.screen(LoginScreen());
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Widget>(
+    return FutureBuilder<_Startup>(
       future: _target,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          if (snapshot.hasData) return snapshot.data!;
           if (snapshot.hasError) {
             // The raw exception can contain internal endpoints and the
             // Supabase project URL, so keep it out of the UI.
@@ -113,6 +163,24 @@ class _StartupScreenState extends State<StartupScreen> {
                 ),
               ),
             );
+          }
+          final result = snapshot.data;
+          if (result != null) {
+            if (result.offline) {
+              return Scaffold(
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: errorCard(
+                      'No internet connection.\n\n'
+                      'The app will start automatically once you are back online.',
+                      _retry,
+                    ),
+                  ),
+                ),
+              );
+            }
+            return result.screen!;
           }
         }
         return const Scaffold(
