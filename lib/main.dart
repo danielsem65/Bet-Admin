@@ -9,6 +9,7 @@ import 'core/supabase_service.dart';
 import 'core/theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'widgets/common.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,7 +70,13 @@ class StartupScreen extends StatefulWidget {
 }
 
 class _StartupScreenState extends State<StartupScreen> {
-  late final Future<Widget> _target = _resolve();
+  late Future<Widget> _target = _resolve();
+
+  void _retry() {
+    setState(() {
+      _target = _resolve();
+    });
+  }
 
   Future<Widget> _resolve() async {
     if (!AppConfig.isConfigured) return const LoginScreen();
@@ -91,13 +98,17 @@ class _StartupScreenState extends State<StartupScreen> {
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasData) return snapshot.data!;
           if (snapshot.hasError) {
+            // The raw exception can contain internal endpoints and the
+            // Supabase project URL, so keep it out of the UI.
+            debugPrint('Startup failed: ${snapshot.error}');
             return Scaffold(
               body: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Text(
-                    'Could not start the app.\n\n${snapshot.error}',
-                    textAlign: TextAlign.center,
+                  child: errorCard(
+                    'Could not start the app.\n\n'
+                    'Check your internet connection and try again.',
+                    _retry,
                   ),
                 ),
               ),
