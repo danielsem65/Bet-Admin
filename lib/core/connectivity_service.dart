@@ -13,9 +13,11 @@ class ConnectivityService {
 
   static final Connectivity _plugin = Connectivity();
 
-  /// Emits whenever the set of available interfaces changes.
-  static Stream<List<ConnectivityResult>> get onChange =>
-      _plugin.onConnectivityChanged;
+  /// Emits `true` whenever a network link appears and `false` when the last one
+  /// goes away. Exposed as a plain bool so callers do not depend on the plugin's
+  /// own types.
+  static Stream<bool> get onStatusChange =>
+      _plugin.onConnectivityChanged.map(_hasLink);
 
   static bool _hasLink(List<ConnectivityResult> results) =>
       results.any((r) => r != ConnectivityResult.none);

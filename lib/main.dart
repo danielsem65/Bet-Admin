@@ -83,7 +83,7 @@ class StartupScreen extends StatefulWidget {
 
 class _StartupScreenState extends State<StartupScreen> {
   late Future<_Startup> _target = _resolve();
-  StreamSubscription<List<ConnectivityResult>>? _connectivity;
+  StreamSubscription<bool>? _connectivity;
   bool _offline = false;
 
   @override
@@ -91,9 +91,8 @@ class _StartupScreenState extends State<StartupScreen> {
     super.initState();
     // Resume automatically once the machine is back online, so an admin who
     // opened the app on a plane does not have to press anything.
-    _connectivity = ConnectivityService.onChange.listen((results) {
-      final back = results.any((r) => r != ConnectivityResult.none);
-      if (back && _offline && mounted) _retry();
+    _connectivity = ConnectivityService.onStatusChange.listen((online) {
+      if (online && _offline && mounted) _retry();
     });
   }
 
