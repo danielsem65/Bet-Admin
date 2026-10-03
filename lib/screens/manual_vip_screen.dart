@@ -29,6 +29,9 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
   Map<String, Map<String, dynamic>> _profiles = {};
   Map<String, Map<String, dynamic>> _plans = {};
   final Set<String> _busy = {};
+  bool _manualMode = false;
+  bool _modeSaving = false;
+  String _waNumber = '';
 
   final _emailCtrl = TextEditingController();
 
@@ -99,6 +102,12 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
           .from('prediction_plans')
           .select('id,name,slug,price,currency,duration_days,is_active');
 
+      final settings = await SupabaseService.client
+          .from('site_settings')
+          .select('payments_manual_mode,whatsapp_payment_number')
+          .eq('id', 1)
+          .maybeSingle();
+
       final pMap = <String, Map<String, dynamic>>{};
       for (final r in profiles.cast<Map<String, dynamic>>()) {
         pMap[r['id'].toString()] = r;
@@ -112,6 +121,10 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
         _requests = reqs.cast<Map<String, dynamic>>();
         _profiles = pMap;
         _plans = planMap;
+        if (settings != null) {
+          _manualMode = (settings['payments_manual_mode']?.toString() ?? 'off').trim().toLowerCase() == 'on';
+          _waNumber = settings['whatsapp_payment_number']?.toString() ?? '';
+        }
         _loading = false;
       });
     } catch (e) {
@@ -119,6 +132,30 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
         _error = e.toString();
         _loading = false;
       });
+    }
+  }
+
+  /// Flips the site-wide manual payment switch. Writes the same
+  /// site_settings row as the website's Settings page and the app's Settings
+  /// screen, so all three stay in agreement.
+  Future<void> _setManualMode(bool value) async {
+    if (value && _waNumber.replaceAll(RegExp(r'\D'), '').isEmpty) {
+      if (mounted) snack(context, 'Add a WhatsApp payment number first (Settings > Payments)');
+      return;
+    }
+    setState(() => _modeSaving = true);
+    try {
+      await SupabaseService.client.from('site_settings').update({
+        'payments_manual_mode': value ? 'on' : 'off',
+      }).eq('id', 1);
+      if (mounted) {
+        setState(() => _manualMode = value);
+        snack(context, value ? 'Manual mode ON — site collects payment via WhatsApp' : 'Manual mode OFF — site uses Paystack');
+      }
+    } catch (e) {
+      if (mounted) snack(context, 'Could not change mode: $e');
+    } finally {
+      if (mounted) setState(() => _modeSaving = false);
     }
   }
 
@@ -342,6 +379,44 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
               RefreshButton(onPressed: _load, enabled: !_loading),
             ],
           ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: _manualMode ? AppColors.gold.withValues(alpha: 0.12) : AppColors.surface,
+              border: Border.all(
+                color: _manualMode ? AppColors.gold : AppColors.border,
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _manualMode,
+              onChanged: _modeSaving ? null : _setManualMode,
+              title: Text(
+                _manualMode ? 'Manual mode is ON' : 'Manual mode is OFF',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: _manualMode ? AppColors.gold : null,
+                ),
+              ),
+              subtitle: Text(
+                _manualMode
+                    ? 'The site is collecting payment over WhatsApp. Requests land below.'
+                    : 'The site is taking Paystack payments. Turn this on to accept WhatsApp payments.',
+                style: const TextStyle(fontSize: 12.5, color: AppColors.muted, height: 1.4),
+              ),
+            ),
+          ),
+          if (_manualMode && _waNumber.replaceAll(RegExp(r'\D'), '').isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                'No WhatsApp payment number set — add one in Settings > Payments.',
+                style: const TextStyle(color: AppColors.red, fontSize: 12.5),
+              ),
+            ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(14),

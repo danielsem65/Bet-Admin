@@ -34,6 +34,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _bookingBookie2 = TextEditingController();
   final _bookingLink2 = TextEditingController();
   final _bookingNote2 = TextEditingController();
+  final _whatsappNumber = TextEditingController();
+  bool _manualMode = false;
 
   @override
   void initState() {
@@ -47,6 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _siteName, _description, _currency, _supportContact, _telegramSupport, _telegramVip, _telegramVvip,
       _bookingLabel, _bookingCode, _bookingBookie, _bookingLink, _bookingNote,
       _bookingLabel2, _bookingCode2, _bookingBookie2, _bookingLink2, _bookingNote2,
+      _whatsappNumber,
     ]) {
       c.dispose();
     }
@@ -78,6 +81,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _bookingBookie2.text = res['booking_bookie_2']?.toString() ?? '';
         _bookingLink2.text = res['booking_link_2']?.toString() ?? '';
         _bookingNote2.text = res['booking_note_2']?.toString() ?? '';
+        _whatsappNumber.text = res['whatsapp_payment_number']?.toString() ?? '';
+        _manualMode = (res['payments_manual_mode']?.toString() ?? 'off').trim().toLowerCase() == 'on';
       }
       setState(() => _loading = false);
     } catch (e) {
@@ -91,6 +96,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _save() async {
     if (_siteName.text.trim().isEmpty) {
       setState(() => _error = 'Site name is required.');
+      return;
+    }
+    final waDigits = _whatsappNumber.text.replaceAll(RegExp(r'\D'), '');
+    if (_manualMode && waDigits.isEmpty) {
+      setState(() => _error = 'Add a WhatsApp payment number before turning manual mode on.');
       return;
     }
     setState(() {
@@ -116,6 +126,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'booking_bookie_2': _bookingBookie2.text.trim(),
         'booking_link_2': _bookingLink2.text.trim(),
         'booking_note_2': _bookingNote2.text.trim(),
+        'payments_manual_mode': _manualMode ? 'on' : 'off',
+        'whatsapp_payment_number': waDigits,
       }).eq('id', 1);
       if (mounted) snack(context, 'Settings saved');
     } on PostgrestException catch (e) {
@@ -163,6 +175,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 formField(_telegramVip, 'VIP channel URL', hint: 'https://t.me/...'),
                 const SizedBox(height: 12),
                 formField(_telegramVvip, 'VVIP channel URL', hint: 'https://t.me/...'),
+                const SizedBox(height: 20),
+                _sectionTitle('Payments'),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: SwitchListTile(
+                    value: _manualMode,
+                    onChanged: _saving ? null : (v) => setState(() { _manualMode = v; _error = null; }),
+                    title: const Text('Manual payment mode (WhatsApp)'),
+                    subtitle: Text(
+                      _manualMode
+                          ? 'ON — the site takes payment over WhatsApp and you activate VIP from the Manual VIP screen.'
+                          : 'OFF — customers pay through Paystack automatically.',
+                      style: TextStyle(fontSize: 12.5, color: _manualMode ? AppColors.gold : null),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                formField(_whatsappNumber, 'WhatsApp payment number', hint: '233241234567'),
                 const SizedBox(height: 20),
                 _sectionTitle('Free Booking Code'),
                 _row2(formField(_bookingLabel, 'Label'), formField(_bookingBookie, 'Bookie')),
