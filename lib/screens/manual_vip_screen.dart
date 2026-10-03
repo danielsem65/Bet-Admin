@@ -59,6 +59,20 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
 
   Map<String, dynamic>? _profileFor(dynamic userId) => _profiles[userId.toString()];
 
+  /// Reads a field as text, tolerating a missing row or a null column.
+  static String _s(Map<String, dynamic>? row, String key) {
+    if (row == null) return '';
+    return row[key]?.toString() ?? '';
+  }
+
+  /// Best available label for a user: full name, else email, else the id.
+  static String _label(Map<String, dynamic>? profile, String fallbackId) {
+    final name = _s(profile, 'full_name');
+    if (name.isNotEmpty) return name;
+    final mail = _s(profile, 'email');
+    return mail.isNotEmpty ? mail : fallbackId;
+  }
+
   /// Only VIP is grantable for now; VVIP has no plan row in the database.
   Map<String, dynamic>? get _vipPlan {
     for (final p in _plans.values) {
@@ -164,7 +178,7 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
     final ref = req['reference']?.toString() ?? '';
     final plan = _planFor(req['plan_id']);
     final profile = _profileFor(req['user_id']);
-    final email = profile?['email']?.toString() ?? req['user_id'].toString();
+    final email = _label(profile, req['user_id'].toString());
     final days = plan == null ? 0 : _num(plan['duration_days']).round();
 
     if (plan == null) {
@@ -240,7 +254,7 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
 
   Future<void> _reject(Map<String, dynamic> req) async {
     final id = req['id'].toString();
-    final email = _profileFor(req['user_id'])?['email']?.toString() ?? 'this user';
+    final email = _label(_profileFor(req['user_id']), 'this user');
     if (!await confirmDialog(context, 'Reject request', 'Reject the request from $email?')) return;
 
     setState(() => _busy.add(id));
@@ -377,11 +391,10 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
               ],
               rows: _requests.map((r) {
                       final profile = _profileFor(r['user_id']);
-                      final name = profile?['full_name']?.toString().isNotEmpty == true
-                          ? profile?['full_name'].toString()
-                          : (profile?['email']?.toString() ?? r['user_id'].toString());
-                      final email = profile?['email']?.toString() ?? '—';
+                      final name = _label(profile, r['user_id'].toString());
+                      final email = _s(profile, 'email');
                       final rPlan = _planFor(r['plan_id']);
+                      final planName = _s(rPlan, 'name');
                       final busy = _busy.contains(r['id'].toString());
                       return DataRow(
                         cells: [
@@ -392,14 +405,14 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                Text(email,
+                                Text(email.isEmpty ? '—' : email,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(fontSize: 11, color: AppColors.muted)),
                               ],
                             ),
                           )),
-                          DataCell(Text(rPlan?['name']?.toString() ?? 'Unknown plan')),
+                          DataCell(Text(planName.isEmpty ? 'Unknown plan' : planName)),
                           DataCell(Text(r['reference']?.toString() ?? '—',
                               style: const TextStyle(fontSize: 12))),
                           DataCell(Text(fmtDate(r['created_at']?.toString(), time: true))),
