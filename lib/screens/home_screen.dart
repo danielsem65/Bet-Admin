@@ -6,6 +6,7 @@ import '../core/theme.dart';
 import '../widgets/common.dart';
 import 'ads_screen.dart';
 import 'dashboard_screen.dart';
+import 'manual_vip_screen.dart';
 import 'news_screen.dart';
 import 'notifications_screen.dart';
 import 'payments_screen.dart';
@@ -38,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Subscriptions',
     'Payments',
     'Users',
+    'Manual VIP',
     'Notifications',
     'Settings',
   ];
@@ -113,7 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       7 => const SubscriptionsScreen(),
                       8 => const PaymentsScreen(),
                       9 => const UsersScreen(),
-                      10 => const NotificationsScreen(),
+                      10 => const ManualVipScreen(),
+                      11 => const NotificationsScreen(),
                       _ => const SettingsScreen(),
                     },
                   ),
@@ -179,6 +182,7 @@ class _Sidebar extends StatelessWidget {
     (Icons.verified_user_outlined, Icons.verified_user, 'Subscriptions'),
     (Icons.payments_outlined, Icons.payments, 'Payments'),
     (Icons.people_outline, Icons.people, 'Users'),
+    (Icons.workspace_premium_outlined, Icons.workspace_premium, 'Manual VIP'),
     (Icons.notifications_outlined, Icons.notifications, 'Notifications'),
     (Icons.settings_outlined, Icons.settings, 'Settings'),
   ];

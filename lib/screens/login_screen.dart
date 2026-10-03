@@ -37,8 +37,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final status = await SupabaseService.adminStatus();
       if (status == AdminStatus.offline) {
         // The role check could not reach the server, so this says nothing about
-        // the account's permissions. Do not sign the session out.
-        await SupabaseService.signOut();
+        // the account's permissions. Keep the session so a transient outage does
+        // not force a re-login; startup re-checks the role once it is online.
         if (mounted) {
           setState(() => _error = 'Could not verify admin access. Check your connection and try again.');
         }
