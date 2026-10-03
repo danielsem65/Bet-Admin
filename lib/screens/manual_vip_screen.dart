@@ -346,6 +346,26 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
             const LoadingBox()
           else if (_error != null)
             errorCard(_error!, _load)
+          else if (_requests.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 34),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Column(
+                children: [
+                  Icon(Icons.inbox_outlined, size: 30, color: AppColors.muted),
+                  SizedBox(height: 10),
+                  Text('No pending requests.',
+                      style: TextStyle(color: AppColors.muted, fontSize: 13)),
+                  SizedBox(height: 4),
+                  Text('Requests from the site appear here as soon as a customer starts checkout.',
+                      style: TextStyle(color: AppColors.muted, fontSize: 12)),
+                ],
+              ),
+            )
           else
             AppTable(
               columns: const [
@@ -355,17 +375,7 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
                 DataColumn(label: Text('Requested')),
                 DataColumn(label: Text('Actions')),
               ],
-              rows: _requests.isEmpty
-                  ? [
-                      const DataRow(cells: [
-                        DataCell(SizedBox(width: 700, child: Text('No pending requests.'))),
-                        DataCell(Text('')),
-                        DataCell(Text('')),
-                        DataCell(Text('')),
-                        DataCell(Text('')),
-                      ])
-                    ]
-                  : _requests.map((r) {
+              rows: _requests.map((r) {
                       final profile = _profileFor(r['user_id']);
                       final name = profile?['full_name']?.toString().isNotEmpty == true
                           ? profile?['full_name'].toString()
