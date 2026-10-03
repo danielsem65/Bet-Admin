@@ -156,7 +156,7 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
         .eq('status', 'active')
         .neq('id', subId);
 
-    return end;
+    return end.toIso8601String();
   }
 
   Future<void> _approve(Map<String, dynamic> req) async {
@@ -368,7 +368,7 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
                   : _requests.map((r) {
                       final profile = _profileFor(r['user_id']);
                       final name = profile?['full_name']?.toString().isNotEmpty == true
-                          ? profile['full_name'].toString()
+                          ? profile?['full_name'].toString()
                           : (profile?['email']?.toString() ?? r['user_id'].toString());
                       final email = profile?['email']?.toString() ?? '—';
                       final rPlan = _planFor(r['plan_id']);
