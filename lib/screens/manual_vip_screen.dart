@@ -135,13 +135,17 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
     final end = start.add(Duration(days: days <= 0 ? 1 : days));
     final reference = _ref();
 
+    // The payment is written as 'pending' first and only flipped to 'success'
+    // once the subscription exists. Marking it paid up front leaves a payment
+    // that claims money was taken while granting no access if the subscription
+    // insert fails, which corrupts revenue reporting.
     await SupabaseService.client.from('payments').insert({
       'user_id': userId,
       'plan_id': plan['id'],
       'amount': _num(plan['price']),
       'currency': plan['currency']?.toString() ?? 'GHS',
       'reference': reference,
-      'status': 'success',
+      'status': 'pending',
       'gateway': 'manual',
       'paid_at': start.toIso8601String(),
       'metadata': {
@@ -159,6 +163,12 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
       'end_date': end.toIso8601String(),
       'payment_reference': reference,
     }).select('id').single();
+
+    // Entitlement exists, so the payment can now be treated as settled.
+    await SupabaseService.client
+        .from('payments')
+        .update({'status': 'success'})
+        .eq('reference', reference);
 
     final subId = sub['id'];
 
