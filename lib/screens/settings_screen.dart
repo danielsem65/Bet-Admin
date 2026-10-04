@@ -35,7 +35,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _bookingLink2 = TextEditingController();
   final _bookingNote2 = TextEditingController();
   final _whatsappNumber = TextEditingController();
-  bool _manualMode = false;
+
+  /// Stored in the payments_manual_mode column as 'off' | 'sikapay' | 'on'.
+  String _payMethod = 'paystack';
+
+  bool get _manualMode => _payMethod == 'on';
 
   @override
   void initState() {
@@ -82,7 +86,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _bookingLink2.text = res['booking_link_2']?.toString() ?? '';
         _bookingNote2.text = res['booking_note_2']?.toString() ?? '';
         _whatsappNumber.text = res['whatsapp_payment_number']?.toString() ?? '';
-        _manualMode = (res['payments_manual_mode']?.toString() ?? 'off').trim().toLowerCase() == 'on';
+        final v = (res['payments_manual_mode']?.toString() ?? 'off').trim().toLowerCase();
+        _payMethod = v == 'sikapay' ? 'sikapay' : (v == 'on' ? 'on' : 'off');
       }
       setState(() => _loading = false);
     } catch (e) {
@@ -98,9 +103,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() => _error = 'Site name is required.');
       return;
     }
-    final waDigits = _whatsappNumber.text.replaceAll(RegExp(r'\D'), '');
-    if (_manualMode && waDigits.isEmpty) {
-      setState(() => _error = 'Add a WhatsApp payment number before turning manual mode on.');
+    // Telegram handles must NOT be reduced to digits: "POSITIVE32_VIP" would
+    // collapse to "32" and build a broken t.me/32 link. Strip only whitespace
+    // and the decorative wrappers a paste might carry.
+    final waHandle = _whatsappNumber.text.trim()
+        .replaceAll(RegExp(r'^\s*(?:https?://)?(?:t\.me/)?'), '')
+        .replaceAll(RegExp(r'^\s*@'), '')
+        .trim();
+    if (_manualMode && waHandle.isEmpty) {
+      setState(() => _error = 'Add a Telegram chat before turning manual mode on.');
       return;
     }
     setState(() {
@@ -126,8 +137,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'booking_bookie_2': _bookingBookie2.text.trim(),
         'booking_link_2': _bookingLink2.text.trim(),
         'booking_note_2': _bookingNote2.text.trim(),
-        'payments_manual_mode': _manualMode ? 'on' : 'off',
-        'whatsapp_payment_number': waDigits,
+        'payments_manual_mode': _payMethod,
+        'whatsapp_payment_number': waHandle,
       }).eq('id', 1);
       if (mounted) snack(context, 'Settings saved');
     } on PostgrestException catch (e) {
@@ -179,20 +190,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _sectionTitle('Payments'),
                 Card(
                   margin: EdgeInsets.zero,
-                  child: SwitchListTile(
-                    value: _manualMode,
-                    onChanged: _saving ? null : (v) => setState(() { _manualMode = v; _error = null; }),
-                    title: const Text('Manual payment mode (WhatsApp)'),
-                    subtitle: Text(
-                      _manualMode
-                          ? 'ON — the site takes payment over WhatsApp and you activate VIP from the Manual VIP screen.'
-                          : 'OFF — customers pay through Paystack automatically.',
-                      style: TextStyle(fontSize: 12.5, color: _manualMode ? AppColors.gold : null),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Payment method', style: Theme.of(context).textTheme.titleSmall),
+                        const SizedBox(height: 10),
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(value: 'off', label: Text('Paystack'), icon: Icon(Icons.credit_card, size: 16)),
+                            ButtonSegment(value: 'sikapay', label: Text('SikaPay'), icon: Icon(Icons.smartphone, size: 16)),
+                            ButtonSegment(value: 'on', label: Text('Telegram'), icon: Icon(Icons.send, size: 16)),
+                          ],
+                          selected: {_payMethod},
+                          onSelectionChanged: _saving
+                              ? null
+                              : (s) => setState(() { _payMethod = s.first; _error = null; }),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          switch (_payMethod) {
+                            'sikapay' => 'SikaPay (Moolre rails) — customers pay with MTN, Vodafone or AirtelTigo. They are charged the plan price plus network and Moolre fees; the full plan price settles to you.',
+                            'on' => 'Manual — the site takes payment over Telegram and you activate VIP from the Manual VIP screen.',
+                            _ => 'Paystack — customers pay by card or bank transfer automatically.',
+                          },
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: _payMethod == 'sikapay' ? AppColors.gold : null,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                formField(_whatsappNumber, 'WhatsApp payment number', hint: '233241234567'),
+                formField(_whatsappNumber, 'Telegram payment chat', hint: 'POSITIVE32_VIP'),
                 const SizedBox(height: 20),
                 _sectionTitle('Free Booking Code'),
                 _row2(formField(_bookingLabel, 'Label'), formField(_bookingBookie, 'Bookie')),

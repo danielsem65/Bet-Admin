@@ -8,9 +8,9 @@ import '../core/theme.dart';
 import '../core/utils.dart';
 import '../widgets/common.dart';
 
-/// Temporary console for the manual / WhatsApp payment flow.
+/// Temporary console for the manual / Telegram payment flow.
 ///
-/// While Site Settings -> Payments is on "Manual via WhatsApp", the site logs a
+/// While Site Settings -> Payments is on "Manual via Telegram", the site logs a
 /// pending row here instead of calling Paystack. The admin confirms the money
 /// arrived out-of-band, then approves, which writes the same payment +
 /// subscription pair the Paystack webhook would have written.
@@ -32,6 +32,11 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
   bool _manualMode = false;
   bool _modeSaving = false;
   String _waNumber = '';
+
+  /// Which automatic gateway to hand back to when manual mode is switched off.
+  /// Without this the switch would silently reset a SikaPay selection back to
+  /// Paystack, because both live in the payments_manual_mode column.
+  String _payMethod = 'paystack';
 
   final _emailCtrl = TextEditingController();
 
@@ -122,7 +127,9 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
         _profiles = pMap;
         _plans = planMap;
         if (settings != null) {
-          _manualMode = (settings['payments_manual_mode']?.toString() ?? 'off').trim().toLowerCase() == 'on';
+          final v = (settings['payments_manual_mode']?.toString() ?? 'off').trim().toLowerCase();
+          _manualMode = v == 'on';
+          _payMethod = v == 'sikapay' ? 'sikapay' : 'paystack';
           _waNumber = settings['whatsapp_payment_number']?.toString() ?? '';
         }
         _loading = false;
@@ -138,19 +145,25 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
   /// Flips the site-wide manual payment switch. Writes the same
   /// site_settings row as the website's Settings page and the app's Settings
   /// screen, so all three stay in agreement.
+  ///
+  /// Switching back off restores whichever automatic gateway was previously
+  /// selected rather than hardcoding Paystack.
   Future<void> _setManualMode(bool value) async {
-    if (value && _waNumber.replaceAll(RegExp(r'\D'), '').isEmpty) {
-      if (mounted) snack(context, 'Add a WhatsApp payment number first (Settings > Payments)');
+    if (value && _waNumber.trim().isEmpty) {
+      if (mounted) snack(context, 'Add a Telegram chat first (Settings > Payments)');
       return;
     }
     setState(() => _modeSaving = true);
     try {
       await SupabaseService.client.from('site_settings').update({
-        'payments_manual_mode': value ? 'on' : 'off',
+        'payments_manual_mode': value ? 'on' : _payMethod,
       }).eq('id', 1);
       if (mounted) {
         setState(() => _manualMode = value);
-        snack(context, value ? 'Manual mode ON — site collects payment via WhatsApp' : 'Manual mode OFF — site uses Paystack');
+        final gateway = _payMethod == 'sikapay' ? 'SikaPay (Moolre)' : 'Paystack';
+        snack(context, value
+            ? 'Manual mode ON — site collects payment via Telegram'
+            : 'Manual mode OFF — site uses $gateway');
       }
     } catch (e) {
       if (mounted) snack(context, 'Could not change mode: $e');
@@ -274,7 +287,7 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
             'user_id': req['user_id'],
             'audience': 'all',
             'message': 'Your ${plan['name']} subscription is active. Thanks for your payment!',
-            'link': '/account.php',
+            'link': '/profile.php',
           });
         } catch (_) {}
 
@@ -374,7 +387,7 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
         children: [
           ScreenHeader(
             title: 'Manual VIP',
-            subtitle: 'Confirm WhatsApp / offline payments and activate VIP by hand',
+            subtitle: 'Confirm Telegram / offline payments and activate VIP by hand',
             actions: [
               RefreshButton(onPressed: _load, enabled: !_loading),
             ],
@@ -403,17 +416,17 @@ class _ManualVipScreenState extends State<ManualVipScreen> {
               ),
               subtitle: Text(
                 _manualMode
-                    ? 'The site is collecting payment over WhatsApp. Requests land below.'
-                    : 'The site is taking Paystack payments. Turn this on to accept WhatsApp payments.',
+                    ? 'The site is collecting payment over Telegram. Requests land below.'
+                    : 'The site is taking automatic payments. Turn this on to accept Telegram payments.',
                 style: const TextStyle(fontSize: 12.5, color: AppColors.muted, height: 1.4),
               ),
             ),
           ),
-          if (_manualMode && _waNumber.replaceAll(RegExp(r'\D'), '').isEmpty)
+          if (_manualMode && _waNumber.trim().isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: Text(
-                'No WhatsApp payment number set — add one in Settings > Payments.',
+                'No Telegram chat set — add one in Settings > Payments.',
                 style: const TextStyle(color: AppColors.red, fontSize: 12.5),
               ),
             ),
